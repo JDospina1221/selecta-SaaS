@@ -1,0 +1,14 @@
+# Node modules
+**/node_modules/
+**/dist/
+**/.angular/
+
+# Variables y llaves (Blindado)
+**/.env
+**/*.local
+**/firebase-key.json
+**/src/environments/environment.prod.ts
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
