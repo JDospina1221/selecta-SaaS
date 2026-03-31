@@ -14,7 +14,8 @@
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         
         @for (product of products(); track product.id) {
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-pointer hover:shadow-md hover:border-blue-400 transition-all">
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-pointer hover:shadow-md hover:border-blue-400 transition-all"
+               (click)="onProductClick(product)">
             <div class="h-24 bg-gray-100 rounded-lg mb-3 flex items-center justify-center text-3xl">
               🍔
             </div>
@@ -36,18 +37,36 @@
         <p class="text-sm text-gray-500">Mesa 1 - Cliente Frecuente</p>
       </div>
 
-      <div class="flex-1 p-6 overflow-y-auto bg-gray-50 flex items-center justify-center">
-         <p class="text-gray-400 text-center font-medium">Aún no hay productos<br>en esta orden</p>
+      <div class="flex-1 p-6 overflow-y-auto bg-gray-50 flex flex-col">
+        @if (cart().length === 0) {
+          <div class="flex-1 flex items-center justify-center">
+            <p class="text-gray-400 text-center font-medium">Aún no hay productos<br>en esta orden</p>
+          </div>
+        } @else {
+          <div class="flex flex-col gap-3">
+            @for (item of cart(); track item.product.id) {
+              <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <div>
+                  <p class="font-bold text-gray-800 text-md">{{ item.product.name }}</p>
+                  <p class="text-gray-500 text-sm">${{ item.product.price }} x {{ item.quantity }}</p>
+                </div>
+                <div class="font-black text-blue-600 text-lg">
+                  ${{ item.product.price * item.quantity }}
+                </div>
+              </div>
+            }
+          </div>
+        }
       </div>
 
       <div class="p-6 border-t border-gray-200 bg-white">
          <div class="flex justify-between text-lg mb-2 text-gray-600">
            <span>Subtotal:</span>
-           <span>$0</span>
+           <span>${{ subtotal() }}</span>
          </div>
          <div class="flex justify-between font-black text-2xl mb-6 text-gray-900">
            <span>Total:</span>
-           <span>$0</span>
+           <span>${{ total() }}</span>
          </div>
          <button class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-sm transition-colors text-lg">
            Cobrar Orden

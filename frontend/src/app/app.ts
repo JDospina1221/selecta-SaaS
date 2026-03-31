@@ -1,33 +1,29 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Component, OnInit, inject } from '@angular/core';
+import { ProductService } from './services/product.service';
+import { OrderService } from './services/order.service';
+import { Product } from './models/product.models';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  templateUrl: './app.html',
-  styleUrls: ['./app.scss'] 
+  templateUrl: './app.html'
 })
 export class App implements OnInit {
-  http = inject(HttpClient);
+  private productService = inject(ProductService);
+  private orderService = inject(OrderService); // Inyectamos el cerebro de las órdenes
   
-  // Magia pura: Usamos 'signal' para que Angular refresque la pantalla obligatoriamente
-  products = signal<any[]>([]);
+  // Exponemos las variables para usarlas en el HTML
+  products = this.productService.products;
+  cart = this.orderService.cart;
+  subtotal = this.orderService.subtotal;
+  total = this.orderService.total;
 
   ngOnInit() {
-    this.loadMenu();
+    this.productService.getProducts('sociedad_selecta_001');
   }
 
-  loadMenu() {
-    this.http.get('http://localhost:3000/api/products?tenantId=sociedad_selecta_001')
-      .subscribe({
-        next: (response: any) => {
-          // Metemos los datos en el signal
-          this.products.set(response.data);
-          console.log('Productos listos para pintar:', this.products());
-        },
-        error: (err) => {
-          console.error('Paila, error conectando al backend:', err);
-        }
-      });
+  // Esta función se dispara cuando el cajero toca una tarjeta del menú
+  onProductClick(product: Product) {
+    this.orderService.addToCart(product);
   }
 }
