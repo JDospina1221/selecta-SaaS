@@ -1,27 +1,36 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Product } from '../models/product.models'; // Este lo creamos en un segundo
+import { Product } from '../models/product.models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductService {
   private http = inject(HttpClient);
-  // URL de tu API de Node.js
   private apiUrl = 'http://localhost:3000/api/products';
 
-  // Usamos un Signal para que la UI se entere solita cuando cambien los datos
   products = signal<Product[]>([]);
 
-  // Función para traer el menú del restaurante
+  // NUEVO: Manejo de categorías
+  categories = ['Todas', 'Hamburguesas', 'Bebidas', 'Adicionales'];
+  selectedCategory = signal<string>('Todas');
+
+  // NUEVO: Magia de Angular. Filtra la lista en tiempo real sin llamar al backend
+  filteredProducts = computed(() => {
+    const current = this.selectedCategory();
+    if (current === 'Todas') return this.products();
+    return this.products().filter(p => p.category === current);
+  });
+
   getProducts(tenantId: string) {
     this.http.get<{data: Product[]}>(`${this.apiUrl}?tenantId=${tenantId}`)
       .subscribe({
-        next: (res) => {
-          this.products.set(res.data);
-          console.log('Servicio: Productos cargados con éxito');
-        },
-        error: (err) => console.error('Error en el servicio de productos:', err)
+        next: (res) => this.products.set(res.data),
+        error: (err) => console.error('Error cargando productos:', err)
       });
+  }
+
+  setCategory(category: string) {
+    this.selectedCategory.set(category);
   }
 }

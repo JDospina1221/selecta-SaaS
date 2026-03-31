@@ -13,7 +13,6 @@ export class App implements OnInit {
   private orderService = inject(OrderService); // Inyectamos el cerebro de las órdenes
   
   // Exponemos las variables para usarlas en el HTML
-  products = this.productService.products;
   cart = this.orderService.cart;
   subtotal = this.orderService.subtotal;
   total = this.orderService.total;
@@ -40,5 +39,14 @@ export class App implements OnInit {
 
   onUpdateQuantity(productId: string, delta: number) {
     this.orderService.updateQuantity(productId, delta);
+  }
+  // Variables de filtros expuestas para el HTML
+  categories = this.productService.categories;
+  selectedCategory = this.productService.selectedCategory;
+  filteredProducts = this.productService.filteredProducts;
+
+  // Función para cuando el cajero toque un filtro
+  onSelectCategory(category: string) {
+    this.productService.setCategory(category);
   }
 }

@@ -9,25 +9,36 @@
   <div class="flex-1 flex overflow-hidden">
     
     <main class="flex-1 p-6 overflow-y-auto">
-      <h2 class="text-2xl font-semibold mb-6 text-gray-800">Menú Principal</h2>
+      <h2 class="text-2xl font-semibold mb-4 text-gray-800">Menú Principal</h2>
       
+      <div class="flex gap-3 mb-6 overflow-x-auto pb-2">
+        @for (cat of categories; track cat) {
+          <button 
+            (click)="onSelectCategory(cat)"
+            [class]="selectedCategory() === cat 
+              ? 'bg-gray-800 text-white shadow-md' 
+              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
+            class="px-6 py-3 rounded-full font-bold text-sm whitespace-nowrap transition-all">
+            {{ cat }}
+          </button>
+        }
+      </div>
+
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        
-        @for (product of products(); track product.id) {
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-pointer hover:shadow-md hover:border-blue-400 transition-all"
+        @for (product of filteredProducts(); track product.id) {
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 cursor-pointer hover:shadow-md hover:border-blue-400 transition-all flex flex-col h-full"
                (click)="onProductClick(product)">
-            <div class="h-24 bg-gray-100 rounded-lg mb-3 flex items-center justify-center text-3xl">
-              🍔
+            <div class="h-20 bg-gray-100 rounded-lg mb-3 flex items-center justify-center text-3xl">
+              {{ product.category === 'Hamburguesas' ? '🍔' : (product.category === 'Bebidas' ? '🥤' : '🍟') }}
             </div>
-            <h3 class="font-bold text-gray-800 leading-tight mb-1">{{ product.name }}</h3>
-            <p class="text-blue-600 font-black">${{ product.price }}</p>
+            <h3 class="font-bold text-gray-800 leading-tight mb-2 flex-1">{{ product.name }}</h3>
+            <p class="text-blue-600 font-black text-lg">${{ product.price }}</p>
           </div>
         } @empty {
-          <div class="col-span-full p-6 text-center text-gray-400">
-            <p>Cargando menú o no hay productos mijo...</p>
+          <div class="col-span-full p-8 text-center text-gray-400 bg-white rounded-xl border border-dashed border-gray-300">
+            <p class="text-lg">No hay productos en esta categoría mijo...</p>
           </div>
         }
-
       </div>
     </main>
 

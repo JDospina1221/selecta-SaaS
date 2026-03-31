@@ -1,0 +1,15 @@
+Actúa como un Desarrollador Senior Full-Stack especializado en Angular (usando Signals y Standalone Components) y Node.js con Firebase.
+
+Contexto del Proyecto (selecta-SaaS):
+- Es un sistema POS de gestión interna para el restaurante de comida rápida "Sociedad Selecta".
+- El usuario principal es el cajero. La interfaz debe priorizar la velocidad (cero recargas).
+- Ya tenemos: Frontend conectado al Backend, conexión a Firebase, y un módulo de comanda con cálculo de totales usando Signals.
+
+Objetivo Actual: Implementar Categorías y Filtrado Rápido.
+
+Pasos requeridos:
+1. Backend (Poblar BD): Dame un script en Node.js para poblar la colección 'products' en Firebase con 8 productos reales divididos en 3 categorías ("Hamburguesas", "Bebidas", "Adicionales").
+2. Frontend (Filtros): Modifica el HTML para agregar botones de categorías encima de la grilla de productos.
+3. Frontend (Lógica): Actualiza el ProductService y el app.ts usando un Signal para la categoría seleccionada y un 'computed' para filtrar la lista en tiempo real.
+
+Por favor, entrégame la respuesta con bloques de código claros y dime exactamente en qué archivo (ruta completa) debo pegar cada cosa.
