@@ -68,9 +68,13 @@
            <span>Total:</span>
            <span>${{ total() }}</span>
          </div>
-         <button class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-sm transition-colors text-lg">
-           Cobrar Orden
-         </button>
+          <<button 
+            (click)="onCheckout()"
+            [disabled]="cart().length === 0"
+            [class.opacity-50]="cart().length === 0"
+            class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-sm transition-colors text-lg disabled:cursor-not-allowed">
+            Cobrar Orden
+          </button>
       </div>
     </aside>
 

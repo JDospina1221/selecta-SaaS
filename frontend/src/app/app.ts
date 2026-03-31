@@ -26,4 +26,9 @@ export class App implements OnInit {
   onProductClick(product: Product) {
     this.orderService.addToCart(product);
   }
+  // Se dispara al hundir el botón verde
+  onCheckout() {
+    // Le pasamos el ID del restaurante
+    this.orderService.checkoutOrder('sociedad_selecta_001');
+  }
 }
