@@ -31,4 +31,14 @@ export class App implements OnInit {
     // Le pasamos el ID del restaurante
     this.orderService.checkoutOrder('sociedad_selecta_001');
   }
+  onRemoveItem(productId: string) {
+    this.orderService.removeItem(productId);
+  }
+  onClearOrder() {
+    this.orderService.clearCart();
+  }
+
+  onUpdateQuantity(productId: string, delta: number) {
+    this.orderService.updateQuantity(productId, delta);
+  }
 }

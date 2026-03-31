@@ -57,4 +57,28 @@ export class OrderService {
       }
     });
   }
+  // Borra un producto completo de la comanda sin importar cuántos haya
+  removeItem(productId: string) {
+    this.cart.update(currentCart => 
+      currentCart.filter(item => item.product.id !== productId)
+    );
+  }
+  // 1. Limpiar todo de un solo tajo
+  clearCart() {
+    this.cart.set([]);
+  }
+
+  // 2. Sumar o restar cantidades (+1 o -1)
+  updateQuantity(productId: string, delta: number) {
+    this.cart.update(currentCart => 
+      currentCart.map(item => {
+        if (item.product.id === productId) {
+          const newQty = item.quantity + delta;
+          // Validamos que la cantidad mínima sea 1
+          return { ...item, quantity: newQty > 0 ? newQty : 1 };
+        }
+        return item;
+      })
+    );
+  }
 }
