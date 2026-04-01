@@ -23,9 +23,11 @@ export class App implements OnInit {
 
   // --- VARIABLES EXPUESTAS AL HTML (DASHBOARD ADMIN) ---
   adminKpis = this.adminService.kpis;
+  adminSales = this.adminService.sales; // <-- NUEVO: Aquí tenemos la tabla de ventas
   isAdminLoading = this.adminService.isLoading;
   adminCurrentView = signal('DASHBOARD'); // <-- NUEVO: Controla la navegación (DASHBOARD, REPORTS, INVENTORY, FINANCE)
-
+  salesPeriod = signal('all'); // <-- NUEVO: Controla el filtro de período en reportes (today, week, month, all)
+  
   // --- VARIABLES DEL LOGIN ---
   loginEmail = signal('');
   loginPin = signal('');
@@ -60,8 +62,15 @@ export class App implements OnInit {
   // --- NAVEGACIÓN DEL ADMINISTRADOR ---
   setAdminView(view: string) {
     this.adminCurrentView.set(view);
+    
+    const user = this.currentUser();
+    if (view === 'REPORTS' && user) {
+      // Cargamos con el filtro que esté seleccionado actualmente
+      this.adminService.loadSales(user.tenantId || 'sociedad_selecta_001', this.salesPeriod());
+    } else if (view === 'DASHBOARD' && user) {
+      this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
+    }
   }
-
   // --- FUNCIONES DE LOGIN Y LOGOUT ---
   updateLoginEmail(e: any) { this.loginEmail.set(e.target.value); }
   updateLoginPin(e: any) { this.loginPin.set(e.target.value); }
@@ -92,5 +101,15 @@ export class App implements OnInit {
   confirmCheckout() {
     this.orderService.checkoutOrder('sociedad_selecta_001', this.paymentMethod());
     this.closeModal();
+  }
+  // <-- NUEVA FUNCIÓN: Se dispara cuando el jefe cambia el selector de fechas
+  onChangeSalesPeriod(event: any) {
+    const period = event.target.value;
+    this.salesPeriod.set(period);
+    
+    const user = this.currentUser();
+    if (user) {
+      this.adminService.loadSales(user.tenantId || 'sociedad_selecta_001', period);
+    }
   }
 }

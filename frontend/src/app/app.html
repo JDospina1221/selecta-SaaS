@@ -212,12 +212,99 @@
         } 
         
         @else if (adminCurrentView() === 'REPORTS') {
-          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center text-gray-400">
-            <span class="text-6xl block mb-4">📊</span>
-            <h3 class="text-2xl font-bold text-gray-800 mb-2">Reportes de Ventas</h3>
-            <p>Aquí construiremos la tabla detallada de todas las comandas.</p>
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            
+            <div class="p-6 border-b border-gray-200 flex flex-wrap gap-4 justify-between items-center bg-gray-50">
+              <h3 class="text-xl font-bold text-gray-800">Historial de Comandas</h3>
+              
+              <div class="flex items-center gap-3">
+                <span class="text-sm font-bold text-gray-500 uppercase">Ver:</span>
+                
+                <select 
+                  (change)="onChangeSalesPeriod($event)" 
+                  class="bg-white border border-gray-300 text-gray-800 font-bold rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-sm shadow-sm">
+                  <option value="all" [selected]="salesPeriod() === 'all'">Todo el historial</option>
+                  <option value="day" [selected]="salesPeriod() === 'day'">Hoy</option>
+                  <option value="week" [selected]="salesPeriod() === 'week'">Esta Semana</option>
+                  <option value="month" [selected]="salesPeriod() === 'month'">Este Mes</option>
+                </select>
+
+                <button class="bg-white border border-gray-300 text-gray-600 font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-100 transition-colors text-sm">
+                  Exportar CSV ⬇️
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-white border-b border-gray-200 text-gray-500 uppercase text-xs tracking-wider">
+                    <th class="p-4 font-bold">Orden #</th>
+                    <th class="p-4 font-bold">Fecha y Hora</th>
+                    <th class="p-4 font-bold text-center">Productos</th>
+                    <th class="p-4 font-bold">Método de Pago</th>
+                    <th class="p-4 font-bold text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  
+                  @if (isAdminLoading()) {
+                    <tr>
+                      <td colspan="5" class="p-8 text-center text-gray-400 font-bold animate-pulse">
+                        Cargando historial...
+                      </td>
+                    </tr>
+                  } @else {
+                    @for (sale of adminSales(); track sale.id) {
+                      <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="p-4">
+                          <span class="font-black text-gray-800">#{{ sale.orderNumber || 'N/A' }}</span>
+                        </td>
+                        
+                        <td class="p-4 text-sm text-gray-600 font-medium">
+                          {{ sale.createdAt | date:'short' }}
+                        </td>
+                        
+                        <td class="p-4 text-center">
+                          <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold">
+                            {{ sale.items?.length || 0 }} items
+                          </span>
+                        </td>
+                        
+                        <td class="p-4">
+                          <span [class]="sale.paymentMethod === 'Efectivo' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'" 
+                                class="px-3 py-1 rounded-md text-xs font-black uppercase tracking-wide">
+                            {{ sale.paymentMethod || 'Efectivo' }}
+                          </span>
+                        </td>
+                        
+                        <td class="p-4 text-right font-black text-gray-900 text-lg">
+                          ${{ sale.total | number }}
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="5" class="p-8 text-center text-gray-400">
+                          No hay ventas registradas en esta sucursal.
+                        </td>
+                      </tr>
+                    }
+                  }
+                  
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center text-sm text-gray-500 font-medium">
+              <span>Mostrando las últimas comandas</span>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 border border-gray-300 rounded hover:bg-white disabled:opacity-50" disabled>Anterior</button>
+                <button class="px-3 py-1 border border-gray-300 rounded hover:bg-white">Siguiente</button>
+              </div>
+            </div>
+
           </div>
-        } 
+        }
         
         @else if (adminCurrentView() === 'INVENTORY') {
           <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center text-gray-400">

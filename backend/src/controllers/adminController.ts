@@ -43,3 +43,54 @@ export const getDashboardKPIs = async (req: Request, res: Response): Promise<voi
     res.status(500).json({ error: 'Error interno calculando finanzas' });
   }
 };
+
+export const getSalesReport = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.query.tenantId as string;
+    const period = req.query.period as string || 'all'; // <-- Recibimos el filtro
+    
+    if (!tenantId) {
+      res.status(400).json({ error: 'Falta el ID de la empresa (tenantId)' });
+      return;
+    }
+
+    const ordersSnapshot = await db.collection('orders')
+      .where('tenantId', '==', tenantId)
+      .get();
+
+    let orders = ordersSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // --- LÓGICA DE FILTRADO POR FECHAS ---
+    if (period !== 'all') {
+      const now = new Date();
+      let startDate = new Date();
+
+      if (period === 'day') {
+        // Desde hoy a las 00:00:00
+        startDate.setHours(0, 0, 0, 0);
+      } else if (period === 'week') {
+        // Desde el domingo/lunes de esta semana
+        const firstDay = now.getDate() - now.getDay();
+        startDate.setDate(firstDay);
+        startDate.setHours(0, 0, 0, 0);
+      } else if (period === 'month') {
+        // Desde el día 1 de este mes
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+
+      // Filtramos las órdenes que se crearon DESPUÉS de la fecha de inicio
+      orders = orders.filter((o: any) => new Date(o.createdAt) >= startDate);
+    }
+
+    // Ordenamos las más recientes primero
+    orders.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error('Error cargando reportes de ventas:', error);
+    res.status(500).json({ error: 'Error interno al cargar el historial' });
+  }
+};
