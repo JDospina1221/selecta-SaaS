@@ -135,3 +135,59 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
     res.status(500).json({ error: 'Error interno al guardar cambios' });
   }
 };
+
+// --- FINANZAS: Traer historial de gastos ---
+export const getExpenses = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.query.tenantId as string;
+    if (!tenantId) {
+      res.status(400).json({ error: 'Falta el ID de la empresa' });
+      return;
+    }
+
+    const snapshot = await db.collection('expenses').where('tenantId', '==', tenantId).get();
+    let expenses = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // Ordenar del gasto más reciente al más viejo
+    expenses.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    res.status(200).json(expenses);
+  } catch (error) {
+    console.error('Error cargando gastos:', error);
+    res.status(500).json({ error: 'Error interno al cargar finanzas' });
+  }
+};
+
+// --- FINANZAS: Registrar un nuevo gasto (Egreso) ---
+export const addExpense = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { tenantId, description, amount, category } = req.body;
+
+    if (!tenantId || !description || !amount) {
+      res.status(400).json({ error: 'Faltan datos para registrar el gasto' });
+      return;
+    }
+
+    const newExpense = {
+      tenantId,
+      description,
+      amount: Number(amount),
+      category: category || 'General',
+      createdAt: new Date().toISOString()
+    };
+
+    const docRef = await db.collection('expenses').add(newExpense);
+
+    res.status(201).json({
+      message: '¡Gasto registrado con éxito!',
+      id: docRef.id,
+      ...newExpense
+    });
+  } catch (error) {
+    console.error('Error guardando gasto:', error);
+    res.status(500).json({ error: 'Error interno al guardar el egreso' });
+  }
+};

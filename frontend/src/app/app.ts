@@ -27,6 +27,7 @@ export class App implements OnInit {
   isAdminLoading = this.adminService.isLoading;
   adminCurrentView = signal('DASHBOARD');
   salesPeriod = signal('all');
+  adminExpenses = this.adminService.expenses; // <-- GASTOS (CAJA MENOR)
 
   // --- VARIABLES MODAL INVENTARIO ---
   isEditProductModalOpen = signal(false);
@@ -34,6 +35,12 @@ export class App implements OnInit {
   editPrice = signal(0);
   editCost = signal(0);
   editStock = signal(0);
+
+  // --- VARIABLES MODAL GASTOS ---
+  isExpenseModalOpen = signal(false);
+  expenseDesc = signal('');
+  expenseAmount = signal(0);
+  expenseCategory = signal('Insumos');
 
   // --- VARIABLES CAJERO ---
   loginEmail = signal('');
@@ -59,14 +66,15 @@ export class App implements OnInit {
   ngOnInit() {}
 
   // --- NAVEGACIÓN ADMIN ---
-  setAdminView(view: string) {
+setAdminView(view: string) {
     this.adminCurrentView.set(view);
     const user = this.currentUser();
     if (!user) return;
 
     if (view === 'REPORTS') this.adminService.loadSales(user.tenantId || 'sociedad_selecta_001', this.salesPeriod());
     else if (view === 'DASHBOARD') this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
-    else if (view === 'INVENTORY') this.adminService.loadProducts(user.tenantId || 'sociedad_selecta_001'); // <-- Carga inventario
+    else if (view === 'INVENTORY') this.adminService.loadProducts(user.tenantId || 'sociedad_selecta_001'); 
+    else if (view === 'FINANCE') this.adminService.loadExpenses(user.tenantId || 'sociedad_selecta_001');
   }
 
   onChangeSalesPeriod(event: any) {
@@ -111,6 +119,43 @@ export class App implements OnInit {
         this.closeEditProduct();
       },
       error: (err) => console.error('Error guardando producto:', err)
+    });
+  }
+
+  // --- FUNCIONES FINANZAS ---
+  openExpenseModal() {
+    this.expenseDesc.set('');
+    this.expenseAmount.set(0);
+    this.expenseCategory.set('Insumos');
+    this.isExpenseModalOpen.set(true);
+  }
+
+  closeExpenseModal() { this.isExpenseModalOpen.set(false); }
+
+  updateExpenseDesc(e: any) { this.expenseDesc.set(e.target.value); }
+  updateExpenseAmount(e: any) { this.expenseAmount.set(Number(e.target.value)); }
+  updateExpenseCategory(e: any) { this.expenseCategory.set(e.target.value); }
+
+  saveExpense() {
+    const user = this.currentUser();
+    if (!user || !this.expenseDesc() || this.expenseAmount() <= 0) {
+      alert('Papi, llene bien la descripción y el monto.');
+      return;
+    }
+
+    const payload = {
+      tenantId: user.tenantId || 'sociedad_selecta_001',
+      description: this.expenseDesc(),
+      amount: this.expenseAmount(),
+      category: this.expenseCategory()
+    };
+
+    this.adminService.addExpense(payload).subscribe({
+      next: () => {
+        this.adminService.loadExpenses(payload.tenantId); // Recarga la tabla
+        this.closeExpenseModal();
+      },
+      error: (err) => console.error('Error guardando gasto:', err)
     });
   }
 

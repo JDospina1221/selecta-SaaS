@@ -283,10 +283,49 @@
         }
         
         @else if (adminCurrentView() === 'FINANCE') {
-          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center text-gray-400">
-            <span class="text-6xl block mb-4">💰</span>
-            <h3 class="text-2xl font-bold text-gray-800 mb-2">Finanzas y Caja Menor</h3>
-            <p>Aquí meteremos el módulo para registrar gastos (egresos).</p>
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+              <div>
+                <h3 class="text-xl font-bold text-gray-800">Caja Menor y Egresos</h3>
+                <p class="text-sm text-gray-500">Registra todos los gastos operativos del negocio</p>
+              </div>
+              <button (click)="openExpenseModal()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded-lg shadow-sm transition-colors text-sm flex items-center gap-2">
+                <span>➖</span> Registrar Gasto
+              </button>
+            </div>
+            
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-white border-b border-gray-200 text-gray-500 uppercase text-xs tracking-wider">
+                    <th class="p-4 font-bold">Fecha</th>
+                    <th class="p-4 font-bold">Descripción</th>
+                    <th class="p-4 font-bold text-center">Categoría</th>
+                    <th class="p-4 font-bold text-right">Monto</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  @if (isAdminLoading()) {
+                    <tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold animate-pulse">Cargando libro contable...</td></tr>
+                  } @else {
+                    @for (expense of adminExpenses(); track expense.id) {
+                      <tr class="hover:bg-red-50 transition-colors">
+                        <td class="p-4 text-sm text-gray-600 font-medium">{{ expense.createdAt | date:'short' }}</td>
+                        <td class="p-4 font-bold text-gray-800">{{ expense.description }}</td>
+                        <td class="p-4 text-center">
+                          <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold">{{ expense.category }}</span>
+                        </td>
+                        <td class="p-4 text-right font-black text-red-600 text-lg">
+                          -${{ expense.amount | number }}
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="4" class="p-8 text-center text-gray-400">No hay egresos registrados. La caja está invicta.</td></tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
           </div>
         }
 
@@ -317,6 +356,40 @@
             <div class="p-4 border-t border-gray-100 bg-gray-50 flex gap-3">
               <button (click)="closeEditProduct()" class="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-3 rounded-xl transition-colors">Cancelar</button>
               <button (click)="saveProductChanges()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl shadow-md transition-colors">Guardar Cambios</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (isExpenseModalOpen()) {
+        <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="bg-red-600 text-white p-5 flex justify-between items-center">
+              <h3 class="text-xl font-bold">Registrar Salida de Dinero</h3>
+              <button (click)="closeExpenseModal()" class="text-red-200 hover:text-white transition-colors">✖</button>
+            </div>
+            <div class="p-6 flex flex-col gap-4">
+              <div>
+                <label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Motivo del Gasto</label>
+                <input type="text" [value]="expenseDesc()" (input)="updateExpenseDesc($event)" placeholder="Ej. Pago a proveedor de pan" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-red-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Categoría</label>
+                <select (change)="updateExpenseCategory($event)" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-red-500 outline-none">
+                  <option value="Insumos" [selected]="expenseCategory() === 'Insumos'">🍅 Insumos / Materia Prima</option>
+                  <option value="Servicios" [selected]="expenseCategory() === 'Servicios'">⚡ Servicios (Agua, Luz, Gas)</option>
+                  <option value="Nómina" [selected]="expenseCategory() === 'Nómina'">👨‍🍳 Nómina / Turnos</option>
+                  <option value="Otros" [selected]="expenseCategory() === 'Otros'">🛒 Otros Gastos</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Monto Total ($)</label>
+                <input type="number" [value]="expenseAmount()" (input)="updateExpenseAmount($event)" placeholder="0" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-red-500 outline-none text-xl font-black text-red-600">
+              </div>
+            </div>
+            <div class="p-4 border-t border-gray-100 bg-gray-50 flex gap-3">
+              <button (click)="closeExpenseModal()" class="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-3 rounded-xl transition-colors">Cancelar</button>
+              <button (click)="saveExpense()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-3 rounded-xl shadow-md transition-colors">Confirmar Gasto</button>
             </div>
           </div>
         </div>

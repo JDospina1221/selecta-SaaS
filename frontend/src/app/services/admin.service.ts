@@ -19,6 +19,7 @@ export class AdminService {
   kpis = signal<DashboardKPIs | null>(null);
   sales = signal<any[]>([]);
   products = signal<any[]>([]); // <-- Variable para el inventario
+  expenses = signal<any[]>([]); // <-- Variable para los gastos
   isLoading = signal(false);
 
   loadKPIs(tenantId: string) {
@@ -52,5 +53,20 @@ export class AdminService {
   // <-- Guardar Cambios del Producto
   updateProduct(productId: string, payload: any) {
     return this.http.put(`${this.apiUrl}/products/${productId}`, payload);
+  }
+  
+  // <-- Cargar Gastos (Caja Menor)
+  loadExpenses(tenantId: string) {
+    this.isLoading.set(true);
+    this.http.get<any[]>(`${this.apiUrl}/finance?tenantId=${tenantId}`)
+      .subscribe({
+        next: (data) => { this.expenses.set(data); this.isLoading.set(false); },
+        error: (err) => { console.error(err); this.isLoading.set(false); }
+      });
+  }
+
+  // <-- Registrar Gasto
+  addExpense(payload: any) {
+    return this.http.post(`${this.apiUrl}/finance`, payload);
   }
 }
