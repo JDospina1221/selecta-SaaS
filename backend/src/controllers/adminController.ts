@@ -21,10 +21,10 @@ export const getDashboardKPIs = async (req: Request, res: Response): Promise<voi
       const order = doc.data();
       totalRevenue += order.total || 0;
       
-      // 🚨 MODO TRANSICIÓN: Como las órdenes viejas no tienen costo guardado, 
-      // le estimamos un costo del 60% por ahora para que la gráfica no se rompa.
-      // Más adelante, cuando guardemos el costo real en la orden, usaremos order.totalCost.
-      totalCost += order.totalCost || (order.total * 0.60); 
+      // AHORA SÍ: Usamos el costo real que guardó el cajero.
+      // Si la orden es vieja y no tiene totalCost (de nuestras pruebas anteriores), 
+      // le ponemos 0 temporalmente para que no se dañe la suma.
+      totalCost += order.totalCost || 0; 
     });
 
     const netProfit = totalRevenue - totalCost;
