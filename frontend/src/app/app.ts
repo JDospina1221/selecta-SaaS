@@ -1,3 +1,4 @@
+import chart from 'chart.js/auto'; 
 import { Component, OnInit, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductService } from './services/product.service';
@@ -30,6 +31,7 @@ export class App implements OnInit {
   salesPeriod = signal('all');
   dashStartDate = signal('');
   dashEndDate = signal('');
+  chartInstance: any = null; // Para guardar la instancia del gráfico y poder destruirlo antes de crear uno nuevo
 
   // --- VARIABLES MODAL DRILL-DOWN (DASHBOARD) ---
   isDetailModalOpen = signal(false);
@@ -65,7 +67,17 @@ export class App implements OnInit {
     effect(() => {
       const user = this.currentUser();
       if (user?.role === 'CAJERO') this.productService.getProducts(user.tenantId || 'sociedad_selecta_001');
-      else if (user?.role === 'ADMIN') this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
+      else if (user?.role === 'ADMIN') {
+        // Solo carga si es primera vez (para no hacer loops infinitos con el chart)
+        if (!this.adminKpis()) this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
+      }
+
+      // --- NUEVO: Dibuja la gráfica cuando hay datos ---
+      const kpis = this.adminKpis();
+      if (kpis && kpis.dailyTrends && this.adminCurrentView() === 'DASHBOARD') {
+        // Esperamos un milisegundo a que Angular pinte el HTML antes de graficar
+        setTimeout(() => this.renderChart(kpis.dailyTrends || []), 0);
+      }
     });
   }
 
@@ -180,4 +192,56 @@ export class App implements OnInit {
   closeModal() { this.isModalOpen.set(false); this.paymentMethod.set('Efectivo'); }
   setPaymentMethod(method: string) { this.paymentMethod.set(method); }
   confirmCheckout() { this.orderService.checkoutOrder('sociedad_selecta_001', this.paymentMethod()); this.closeModal(); }
+
+  // --- FUNCIÓN DE GRÁFICAS ---
+  renderChart(trends: any[]) {
+    const canvas = document.getElementById('trendChart') as HTMLCanvasElement;
+    if (!canvas) return;
+
+    // Si ya había una gráfica, la destruimos para no encimarla
+    if (this.chartInstance) {
+      this.chartInstance.destroy();
+    }
+
+    const labels = trends.map(t => t.date);
+    const revenues = trends.map(t => t.revenue);
+    const profits = trends.map(t => t.profit);
+
+    this.chartInstance = new chart(canvas, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Ingresos Brutos ($)',
+            data: revenues,
+            borderColor: '#3b82f6', // Azulito
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            fill: true,
+            tension: 0.4 // Curvas suaves
+          },
+          {
+            label: 'Ganancia Neta ($)',
+            data: profits,
+            borderColor: '#10b981', // Verdecito
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: (context) => `$${Number(context.raw).toLocaleString()}`
+            }
+          }
+        }
+      }
+    });
+  }
 }

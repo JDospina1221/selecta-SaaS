@@ -7,10 +7,7 @@ export const getDashboardKPIs = async (req: Request, res: Response): Promise<voi
     const start = req.query.startDate as string;
     const end = req.query.endDate as string;
 
-    if (!tenantId) {
-      res.status(400).json({ error: 'Falta el ID de la empresa' });
-      return;
-    }
+    if (!tenantId) return Object.assign(res.status(400).json({ error: 'Falta el ID de la empresa' }));
 
     let startDate = new Date(0); 
     let endDate = new Date();    
@@ -23,83 +20,79 @@ export const getDashboardKPIs = async (req: Request, res: Response): Promise<voi
       db.collection('expenses').where('tenantId', '==', tenantId).get()
     ]);
 
-    let totalRevenue = 0; 
-    let totalCOGS = 0;    
-    let totalOrders = 0;
+    let totalRevenue = 0, totalCOGS = 0, totalOrders = 0, totalExpenses = 0;
+    const productSalesMap: Record<string, any> = {};
+    const expensesDetail: any[] = [];
+    
+    // --- NUEVO: Objeto para agrupar los datos día por día ---
+    const dailyDataMap: Record<string, { revenue: number, profit: number }> = {};
 
-    // --- NUEVO: Diccionario para agrupar productos vendidos ---
-    const productSalesMap: Record<string, { qty: number, revenue: number, cogs: number, category: string }> = {};
-
+    // Procesar Órdenes
     ordersSnapshot.forEach(doc => {
       const order = doc.data();
       const orderDate = new Date(order.createdAt);
       
       if (orderDate >= startDate && orderDate <= endDate) {
-        totalRevenue += order.total || 0;
-        totalCOGS += order.totalCost || 0;
+        const revenue = order.total || 0;
+        const cogs = order.totalCost || 0;
+        
+        totalRevenue += revenue;
+        totalCOGS += cogs;
         totalOrders++;
 
-        // Agrupamos qué productos se vendieron en esta orden
+        // Desglose de productos (lo que hicimos en el paso anterior)
         if (order.items && Array.isArray(order.items)) {
           order.items.forEach((item: any) => {
             const name = item.product.name;
-            if (!productSalesMap[name]) {
-              productSalesMap[name] = { qty: 0, revenue: 0, cogs: 0, category: item.product.category };
-            }
+            if (!productSalesMap[name]) productSalesMap[name] = { qty: 0, revenue: 0, cogs: 0, category: item.product.category };
             productSalesMap[name].qty += item.quantity;
             productSalesMap[name].revenue += (item.product.price * item.quantity);
             productSalesMap[name].cogs += ((item.product.cost || 0) * item.quantity);
           });
         }
+
+        // --- NUEVO: Agrupar para la gráfica (Ingreso y Ganancia bruta del día) ---
+        const dateStr = orderDate.toISOString().split('T')[0]; // Fecha formato YYYY-MM-DD
+        if (!dailyDataMap[dateStr]) dailyDataMap[dateStr] = { revenue: 0, profit: 0 };
+        dailyDataMap[dateStr].revenue += revenue;
+        dailyDataMap[dateStr].profit += (revenue - cogs);
       }
     });
 
-    // Convertimos el diccionario en un arreglo y lo ordenamos por los más vendidos
-    const topProducts = Object.entries(productSalesMap)
-      .map(([name, data]) => ({ name, ...data }))
-      .sort((a, b) => b.qty - a.qty);
-
-    let totalExpenses = 0; 
-    // --- NUEVO: Arreglo para guardar el detalle de gastos del periodo ---
-    const expensesDetail: any[] = [];
-    
+    // Procesar Gastos (Caja Menor)
     expensesSnapshot.forEach(doc => {
       const expense = doc.data();
       const expenseDate = new Date(expense.createdAt);
       
       if (expenseDate >= startDate && expenseDate <= endDate) {
         totalExpenses += expense.amount || 0;
-        expensesDetail.push({
-          description: expense.description,
-          category: expense.category,
-          amount: expense.amount,
-          date: expense.createdAt
-        });
+        expensesDetail.push({ description: expense.description, category: expense.category, amount: expense.amount, date: expense.createdAt });
+
+        // --- NUEVO: Restar los gastos del día a la gráfica de ganancia neta ---
+        const dateStr = expenseDate.toISOString().split('T')[0];
+        if (!dailyDataMap[dateStr]) dailyDataMap[dateStr] = { revenue: 0, profit: 0 };
+        dailyDataMap[dateStr].profit -= (expense.amount || 0);
       }
     });
 
-    // Ordenamos los gastos por los más caros primero
+    const topProducts = Object.entries(productSalesMap).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.qty - a.qty);
     expensesDetail.sort((a, b) => b.amount - a.amount);
+
+    // --- NUEVO: Convertir el mapa de días en un arreglo ordenado por fecha ---
+    const dailyTrends = Object.entries(dailyDataMap)
+      .map(([date, data]) => ({ date, ...data }))
+      .sort((a, b) => a.date.localeCompare(b.date)); // Orden cronológico
 
     const netProfit = totalRevenue - totalCOGS - totalExpenses;
     const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
     const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0';
 
-    // Mandamos los totales Y los desgloses al Frontend
     res.status(200).json({
-      totalRevenue,
-      totalCOGS,
-      totalExpenses,
-      netProfit,
-      averageTicket,
-      totalOrders,
-      profitMargin,
-      topProducts,     // <-- El Drill-down de ventas y costos
-      expensesDetail   // <-- El Drill-down de la caja menor
+      totalRevenue, totalCOGS, totalExpenses, netProfit, averageTicket, totalOrders, profitMargin, topProducts, expensesDetail,
+      dailyTrends // <-- Mandamos la data de la gráfica al Frontend
     });
-
   } catch (error) {
-    console.error('Error calculando KPIs del Dashboard:', error);
+    console.error('Error calculando KPIs:', error);
     res.status(500).json({ error: 'Error interno al cargar el dashboard' });
   }
 };

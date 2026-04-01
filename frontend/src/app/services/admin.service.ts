@@ -11,6 +11,7 @@ export interface DashboardKPIs {
   profitMargin: string;
   topProducts?: any[];    // <-- NUEVO: Desglose de productos
   expensesDetail?: any[]; // <-- NUEVO: Desglose de gastos
+  dailyTrends?: any[];     // <-- NUEVO: Tendencias diarias para gráfica
 }
 
 @Injectable({

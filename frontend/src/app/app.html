@@ -212,7 +212,12 @@
               </div>
             </div>
             
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center text-gray-400 border-dashed h-64 flex flex-col items-center justify-center"><span class="text-5xl block mb-4">📊</span><p class="font-bold text-lg">Área reservada para gráficas de tendencias</p><p class="text-sm">Aquí conectaremos los picos de ventas por día</p></div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mt-6 h-80 relative">
+              <h3 class="font-bold text-gray-800 mb-4">Tendencias de Rendimiento (Por Día)</h3>
+              <div class="absolute inset-0 top-16 bottom-4 left-6 right-6">
+                <canvas id="trendChart"></canvas>
+              </div>
+            </div>
           }
         } 
         
@@ -227,6 +232,7 @@
               </div>
             </div>
             <div class="overflow-x-auto">
+
               <table class="w-full text-left border-collapse">
                 <thead>
                   <tr class="bg-white border-b border-gray-200 text-gray-500 uppercase text-xs tracking-wider"><th class="p-4 font-bold">Orden #</th><th class="p-4 font-bold">Fecha y Hora</th><th class="p-4 font-bold text-center">Productos</th><th class="p-4 font-bold">Método de Pago</th><th class="p-4 font-bold text-right">Total</th></tr>
@@ -377,7 +383,6 @@
           </div>
         </div>
       }
-
     </main>
   </div>
 }
