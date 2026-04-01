@@ -136,19 +136,105 @@
   </div>
 
 } @else if (currentUser()?.role === 'ADMIN') {
-  <div class="min-h-screen bg-gray-100 font-sans flex flex-col">
-    <header class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center">
-      <h1 class="text-2xl font-bold tracking-wide">Selecta <span class="font-normal opacity-80">| Admin Dashboard</span></h1>
-      <button (click)="onLogout()" class="text-red-200 hover:text-white font-bold text-sm bg-blue-800 hover:bg-red-600 px-4 py-1.5 rounded-full transition-colors">
-        Cerrar Sesión
-      </button>
-    </header>
+  <div class="min-h-screen bg-gray-50 font-sans flex overflow-hidden text-gray-800">
     
-    <main class="flex-1 flex items-center justify-center p-6">
-      <div class="text-center bg-white p-12 rounded-3xl shadow-lg border border-gray-200 max-w-lg">
-        <div class="text-6xl mb-6">🚧</div>
-        <h2 class="text-3xl font-black text-gray-800 mb-2">Zona de Reportes</h2>
-        <p class="text-gray-500 text-lg">Aquí vamos a armar las gráficas y la gestión de menú, mi rey.</p>
+    <aside class="w-64 bg-gray-900 text-white flex flex-col shadow-2xl z-20">
+      <div class="p-6 border-b border-gray-800">
+        <h1 class="text-2xl font-black tracking-tight text-white">Selecta<span class="text-blue-500">SaaS</span></h1>
+        <p class="text-xs text-gray-400 mt-1 uppercase tracking-widest">{{ currentUser()?.name }}</p>
+      </div>
+      <nav class="flex-1 p-4 flex flex-col gap-2">
+        <button (click)="setAdminView('DASHBOARD')" [class]="adminCurrentView() === 'DASHBOARD' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:bg-gray-800 hover:text-white'" class="flex items-center w-full gap-3 px-4 py-3 rounded-xl font-bold transition-colors">
+          <span>📊</span> Dashboard
+        </button>
+        <button (click)="setAdminView('REPORTS')" [class]="adminCurrentView() === 'REPORTS' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:bg-gray-800 hover:text-white'" class="flex items-center w-full gap-3 px-4 py-3 rounded-xl font-bold transition-colors">
+          <span>📈</span> Reportes de Ventas
+        </button>
+        <button (click)="setAdminView('INVENTORY')" [class]="adminCurrentView() === 'INVENTORY' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:bg-gray-800 hover:text-white'" class="flex items-center w-full gap-3 px-4 py-3 rounded-xl font-bold transition-colors">
+          <span>📦</span> Inventario
+        </button>
+        <button (click)="setAdminView('FINANCE')" [class]="adminCurrentView() === 'FINANCE' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:bg-gray-800 hover:text-white'" class="flex items-center w-full gap-3 px-4 py-3 rounded-xl font-bold transition-colors">
+          <span>💰</span> Finanzas
+        </button>
+      </nav>
+      <div class="p-4 border-t border-gray-800">
+        <button (click)="onLogout()" class="w-full flex items-center justify-center gap-2 text-red-400 hover:bg-red-500 hover:text-white px-4 py-3 rounded-xl font-bold transition-colors">
+          <span>🚪</span> Cerrar Sesión
+        </button>
+      </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto">
+      
+      <header class="bg-white p-6 shadow-sm border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
+        <h2 class="text-2xl font-bold text-gray-800">Resumen del Negocio</h2>
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-bold text-gray-500 uppercase">Sucursal:</span>
+          <select class="bg-gray-100 border-none text-gray-800 font-bold rounded-lg py-2 px-4 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer">
+            <option>Todas las Sucursales</option>
+            <option>Sede Norte</option>
+            <option>Sede Sur</option>
+          </select>
+        </div>
+      </header>
+
+      <div class="p-8">
+        
+        @if (adminCurrentView() === 'DASHBOARD') {
+          @if (isAdminLoading()) {
+            <div class="flex justify-center items-center h-40">
+              <p class="text-gray-500 font-bold animate-pulse">Calculando billete...</p>
+            </div>
+          } @else if (adminKpis()) {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-2xl">💵</div><p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Ingresos Totales</p></div>
+                <h3 class="text-3xl font-black text-gray-900">${{ adminKpis()?.totalRevenue | number }}</h3>
+              </div>
+              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-blue-500 text-white text-xs font-black px-3 py-1 rounded-bl-lg">Margen: {{ adminKpis()?.profitMargin }}%</div>
+                <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl">💰</div><p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Ganancia Neta</p></div>
+                <h3 class="text-3xl font-black text-blue-600">${{ adminKpis()?.netProfit | number }}</h3>
+              </div>
+              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-2xl">🧾</div><p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Ticket Promedio</p></div>
+                <h3 class="text-3xl font-black text-gray-900">${{ adminKpis()?.averageTicket | number:'1.0-0' }}</h3>
+              </div>
+              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-2xl">🍔</div><p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Órdenes Facturadas</p></div>
+                <h3 class="text-3xl font-black text-gray-900">{{ adminKpis()?.totalOrders }}</h3>
+              </div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center text-gray-400 border-dashed">
+              <span class="text-4xl block mb-2">📈</span><p class="font-bold text-lg">Área reservada para gráficas de barras</p>
+            </div>
+          }
+        } 
+        
+        @else if (adminCurrentView() === 'REPORTS') {
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center text-gray-400">
+            <span class="text-6xl block mb-4">📊</span>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Reportes de Ventas</h3>
+            <p>Aquí construiremos la tabla detallada de todas las comandas.</p>
+          </div>
+        } 
+        
+        @else if (adminCurrentView() === 'INVENTORY') {
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center text-gray-400">
+            <span class="text-6xl block mb-4">📦</span>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Inventario</h3>
+            <p>Aquí controlaremos el stock de las sucursales.</p>
+          </div>
+        } 
+        
+        @else if (adminCurrentView() === 'FINANCE') {
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center text-gray-400">
+            <span class="text-6xl block mb-4">💰</span>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Finanzas y Caja Menor</h3>
+            <p>Aquí meteremos el módulo para registrar gastos (egresos).</p>
+          </div>
+        }
+
       </div>
     </main>
   </div>

@@ -1,26 +1,35 @@
-import { Component, OnInit, inject, signal, effect } from '@angular/core'; // <-- Importamos 'effect'
+import { Component, OnInit, inject, signal, effect } from '@angular/core';
+import { CommonModule } from '@angular/common'; // <-- SOLUCIÓN AL ERROR ROJO
 import { ProductService } from './services/product.service';
 import { OrderService } from './services/order.service';
 import { AuthService } from './services/auth.service';
 import { Product } from './models/product.models';
+import { AdminService } from './services/admin.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
+  imports: [CommonModule], // <-- LO INYECTAMOS AQUÍ
   templateUrl: './app.html'
 })
 export class App implements OnInit {
   private productService = inject(ProductService);
   private orderService = inject(OrderService); 
   private authService = inject(AuthService); 
+  private adminService = inject(AdminService);
   
   // --- VARIABLE MAESTRA DE SEGURIDAD ---
   currentUser = this.authService.currentUser;
 
+  // --- VARIABLES EXPUESTAS AL HTML (DASHBOARD ADMIN) ---
+  adminKpis = this.adminService.kpis;
+  isAdminLoading = this.adminService.isLoading;
+  adminCurrentView = signal('DASHBOARD'); // <-- NUEVO: Controla la navegación (DASHBOARD, REPORTS, INVENTORY, FINANCE)
+
   // --- VARIABLES DEL LOGIN ---
   loginEmail = signal('');
   loginPin = signal('');
-  loginError = this.authService.loginError; // <-- Ahora la lee del servicio
+  loginError = this.authService.loginError;
 
   // --- VARIABLES EXPUESTAS AL HTML (POS) ---
   cart = this.orderService.cart;
@@ -36,19 +45,21 @@ export class App implements OnInit {
   paymentMethod = signal('Efectivo'); 
 
   constructor() {
-    // 🔥 TRUCO SENIOR: Como el login va a Node (es asíncrono), 
-    // usamos 'effect' para "escuchar" cuándo llega el usuario y ahí sí cargar el menú.
     effect(() => {
       const user = this.currentUser();
       if (user?.role === 'CAJERO') {
-        // Usamos el tenantId del usuario para traer los productos correctos
         this.productService.getProducts(user.tenantId || 'sociedad_selecta_001');
+      } else if (user?.role === 'ADMIN') {
+        this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
       }
     });
   }
 
-  ngOnInit() {
-    // Vacío, el effect() de arriba se encarga de la carga inicial
+  ngOnInit() {}
+
+  // --- NAVEGACIÓN DEL ADMINISTRADOR ---
+  setAdminView(view: string) {
+    this.adminCurrentView.set(view);
   }
 
   // --- FUNCIONES DE LOGIN Y LOGOUT ---
@@ -56,17 +67,14 @@ export class App implements OnInit {
   updateLoginPin(e: any) { this.loginPin.set(e.target.value); }
 
   onLogin() {
-    // El servicio ahora hace la petición al Backend
     this.authService.login(this.loginEmail(), this.loginPin());
-    
-    // Limpiamos los inputs después del intento
     this.loginEmail.set('');
     this.loginPin.set('');
   }
 
   onLogout() {
     this.authService.logout();
-    this.orderService.clearCart(); // Limpiamos la comanda por seguridad
+    this.orderService.clearCart(); 
   }
 
   // --- FUNCIONES DEL MENÚ Y COMANDA ---

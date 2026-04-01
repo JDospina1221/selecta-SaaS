@@ -5,6 +5,8 @@ import { db } from './config/firebase';
 import productRoutes from './routes/productRoutes'; // <-- Importamos nuestras rutas
 import orderRoutes from './routes/orderRoutes'; // <-- Importamos nuestras rutas de órdenes
 import authRoutes from './routes/authRoutes'; // <-- Importamos nuestras rutas de autenticación
+import adminRoutes from './routes/adminRoutes'; // <-- Importamos nuestras rutas de administración
+
 
 dotenv.config();
 
@@ -23,7 +25,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 app.use('/api/products', productRoutes); // <-- Todo lo que vaya a /api/products lo maneja productRoutes
 app.use('/api/orders', orderRoutes); // <-- Todo lo que vaya a /api/orders lo maneja orderRoutes
 app.use('/api/auth', authRoutes); // <-- Todo lo que vaya a /api/auth lo maneja authRoutes
-
+app.use('/api/admin', adminRoutes); // <-- Todo lo que vaya a /api/admin lo maneja adminRoutes
 
 
 app.listen(PORT, () => {
