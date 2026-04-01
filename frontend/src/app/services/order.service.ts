@@ -32,13 +32,13 @@ export class OrderService {
       return [...currentCart, { product, quantity: 1 }];
     });
   }
-
-  // NUEVA FUNCIÓN: Dispara la venta a la base de datos
-  checkoutOrder(tenantId: string) {
-    if (this.cart().length === 0) return; // Si no hay nada, no hace nada
+// Actualizamos la función para que reciba los nuevos parámetros
+checkoutOrder(tenantId: string, paymentMethod: string) {
+    if (this.cart().length === 0) return;
 
     const orderPayload = {
       tenantId,
+      paymentMethod,
       items: this.cart(),
       subtotal: this.subtotal(),
       total: this.total()
@@ -46,9 +46,8 @@ export class OrderService {
 
     this.http.post(this.apiUrl, orderPayload).subscribe({
       next: (res: any) => {
-        console.log('Respuesta del servidor:', res.message);
-        alert('¡Orden cobrada y guardada con éxito!');
-        // Vaciamos la comanda para el siguiente cliente
+        // Mostramos el turno generado por el backend
+        alert(`¡Comanda exitosa! Entregar Pedido #${res.orderNumber}`);
         this.cart.set([]); 
       },
       error: (err) => {

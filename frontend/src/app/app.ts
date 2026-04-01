@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core'; // <-- 1. SOLUCIÓN: Agregamos 'signal'
 import { ProductService } from './services/product.service';
 import { OrderService } from './services/order.service';
 import { Product } from './models/product.models';
@@ -10,29 +10,39 @@ import { Product } from './models/product.models';
 })
 export class App implements OnInit {
   private productService = inject(ProductService);
-  private orderService = inject(OrderService); // Inyectamos el cerebro de las órdenes
+  private orderService = inject(OrderService); 
   
-  // Exponemos las variables para usarlas en el HTML
+  // --- VARIABLES EXPUESTAS AL HTML ---
   cart = this.orderService.cart;
   subtotal = this.orderService.subtotal;
   total = this.orderService.total;
+  
+  categories = this.productService.categories;
+  selectedCategory = this.productService.selectedCategory;
+  filteredProducts = this.productService.filteredProducts;
+
+  // --- VARIABLES DEL MODAL DE COBRO ---
+  isModalOpen = signal(false);
+  customerName = signal('');
+  paymentMethod = signal('Efectivo'); 
 
   ngOnInit() {
     this.productService.getProducts('sociedad_selecta_001');
   }
 
-  // Esta función se dispara cuando el cajero toca una tarjeta del menú
+  // --- FUNCIONES DEL MENÚ Y COMANDA ---
   onProductClick(product: Product) {
     this.orderService.addToCart(product);
   }
-  // Se dispara al hundir el botón verde
-  onCheckout() {
-    // Le pasamos el ID del restaurante
-    this.orderService.checkoutOrder('sociedad_selecta_001');
+
+  onSelectCategory(category: string) {
+    this.productService.setCategory(category);
   }
+
   onRemoveItem(productId: string) {
     this.orderService.removeItem(productId);
   }
+
   onClearOrder() {
     this.orderService.clearCart();
   }
@@ -40,13 +50,25 @@ export class App implements OnInit {
   onUpdateQuantity(productId: string, delta: number) {
     this.orderService.updateQuantity(productId, delta);
   }
-  // Variables de filtros expuestas para el HTML
-  categories = this.productService.categories;
-  selectedCategory = this.productService.selectedCategory;
-  filteredProducts = this.productService.filteredProducts;
 
-  // Función para cuando el cajero toque un filtro
-  onSelectCategory(category: string) {
-    this.productService.setCategory(category);
+ // --- VARIABLES DEL MODAL DE COBRO ---
+
+  // --- FUNCIONES DEL MODAL DE COBRO ---
+  openCheckoutModal() {
+    this.isModalOpen.set(true);
+  }
+
+  closeModal() {
+    this.isModalOpen.set(false);
+    this.paymentMethod.set('Efectivo');
+  }
+
+  setPaymentMethod(method: string) {
+    this.paymentMethod.set(method);
+  }
+  confirmCheckout() {
+    // Solo mandamos el ID y el método de pago
+    this.orderService.checkoutOrder('sociedad_selecta_001', this.paymentMethod());
+    this.closeModal();
   }
 }
