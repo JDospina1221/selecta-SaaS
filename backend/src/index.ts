@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { db } from './config/firebase'; 
 import productRoutes from './routes/productRoutes'; // <-- Importamos nuestras rutas
 import orderRoutes from './routes/orderRoutes'; // <-- Importamos nuestras rutas de órdenes
+import authRoutes from './routes/authRoutes'; // <-- Importamos nuestras rutas de autenticación
 
 dotenv.config();
 
@@ -21,6 +22,9 @@ app.get('/api/health', (req: Request, res: Response) => {
 // Registramos las rutas oficiales del sistema POS
 app.use('/api/products', productRoutes); // <-- Todo lo que vaya a /api/products lo maneja productRoutes
 app.use('/api/orders', orderRoutes); // <-- Todo lo que vaya a /api/orders lo maneja orderRoutes
+app.use('/api/auth', authRoutes); // <-- Todo lo que vaya a /api/auth lo maneja authRoutes
+
+
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
