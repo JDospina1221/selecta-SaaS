@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal, effect } from '@angular/core';
-import { CommonModule } from '@angular/common'; // <-- SOLUCIÓN AL ERROR ROJO
+import { CommonModule } from '@angular/common';
 import { ProductService } from './services/product.service';
 import { OrderService } from './services/order.service';
 import { AuthService } from './services/auth.service';
@@ -9,7 +9,7 @@ import { AdminService } from './services/admin.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule], // <-- LO INYECTAMOS AQUÍ
+  imports: [CommonModule],
   templateUrl: './app.html'
 })
 export class App implements OnInit {
@@ -18,98 +18,114 @@ export class App implements OnInit {
   private authService = inject(AuthService); 
   private adminService = inject(AdminService);
   
-  // --- VARIABLE MAESTRA DE SEGURIDAD ---
   currentUser = this.authService.currentUser;
 
-  // --- VARIABLES EXPUESTAS AL HTML (DASHBOARD ADMIN) ---
+  // --- VARIABLES DASHBOARD ADMIN ---
   adminKpis = this.adminService.kpis;
-  adminSales = this.adminService.sales; // <-- NUEVO: Aquí tenemos la tabla de ventas
+  adminSales = this.adminService.sales; 
+  adminProducts = this.adminService.products; // <-- INVENTARIO
   isAdminLoading = this.adminService.isLoading;
-  adminCurrentView = signal('DASHBOARD'); // <-- NUEVO: Controla la navegación (DASHBOARD, REPORTS, INVENTORY, FINANCE)
-  salesPeriod = signal('all'); // <-- NUEVO: Controla el filtro de período en reportes (today, week, month, all)
-  
-  // --- VARIABLES DEL LOGIN ---
+  adminCurrentView = signal('DASHBOARD');
+  salesPeriod = signal('all');
+
+  // --- VARIABLES MODAL INVENTARIO ---
+  isEditProductModalOpen = signal(false);
+  editingProduct = signal<any>(null);
+  editPrice = signal(0);
+  editCost = signal(0);
+  editStock = signal(0);
+
+  // --- VARIABLES CAJERO ---
   loginEmail = signal('');
   loginPin = signal('');
   loginError = this.authService.loginError;
-
-  // --- VARIABLES EXPUESTAS AL HTML (POS) ---
   cart = this.orderService.cart;
   subtotal = this.orderService.subtotal;
   total = this.orderService.total;
-  
   categories = this.productService.categories;
   selectedCategory = this.productService.selectedCategory;
   filteredProducts = this.productService.filteredProducts;
-
-  // --- VARIABLES DEL MODAL DE COBRO ---
   isModalOpen = signal(false);
   paymentMethod = signal('Efectivo'); 
 
   constructor() {
     effect(() => {
       const user = this.currentUser();
-      if (user?.role === 'CAJERO') {
-        this.productService.getProducts(user.tenantId || 'sociedad_selecta_001');
-      } else if (user?.role === 'ADMIN') {
-        this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
-      }
+      if (user?.role === 'CAJERO') this.productService.getProducts(user.tenantId || 'sociedad_selecta_001');
+      else if (user?.role === 'ADMIN') this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
     });
   }
 
   ngOnInit() {}
 
-  // --- NAVEGACIÓN DEL ADMINISTRADOR ---
+  // --- NAVEGACIÓN ADMIN ---
   setAdminView(view: string) {
     this.adminCurrentView.set(view);
-    
     const user = this.currentUser();
-    if (view === 'REPORTS' && user) {
-      // Cargamos con el filtro que esté seleccionado actualmente
-      this.adminService.loadSales(user.tenantId || 'sociedad_selecta_001', this.salesPeriod());
-    } else if (view === 'DASHBOARD' && user) {
-      this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
-    }
+    if (!user) return;
+
+    if (view === 'REPORTS') this.adminService.loadSales(user.tenantId || 'sociedad_selecta_001', this.salesPeriod());
+    else if (view === 'DASHBOARD') this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
+    else if (view === 'INVENTORY') this.adminService.loadProducts(user.tenantId || 'sociedad_selecta_001'); // <-- Carga inventario
   }
-  // --- FUNCIONES DE LOGIN Y LOGOUT ---
+
+  onChangeSalesPeriod(event: any) {
+    const period = event.target.value;
+    this.salesPeriod.set(period);
+    const user = this.currentUser();
+    if (user) this.adminService.loadSales(user.tenantId || 'sociedad_selecta_001', period);
+  }
+
+  // --- FUNCIONES INVENTARIO ---
+  openEditProduct(product: any) {
+    this.editingProduct.set(product);
+    this.editPrice.set(product.price || 0);
+    this.editCost.set(product.cost || 0);
+    this.editStock.set(product.stock || 0);
+    this.isEditProductModalOpen.set(true);
+  }
+
+  closeEditProduct() {
+    this.isEditProductModalOpen.set(false);
+    this.editingProduct.set(null);
+  }
+
+  updateEditPrice(e: any) { this.editPrice.set(Number(e.target.value)); }
+  updateEditCost(e: any) { this.editCost.set(Number(e.target.value)); }
+  updateEditStock(e: any) { this.editStock.set(Number(e.target.value)); }
+
+  saveProductChanges() {
+    const product = this.editingProduct();
+    if (!product) return;
+
+    const payload = {
+      price: this.editPrice(),
+      cost: this.editCost(),
+      stock: this.editStock()
+    };
+
+    this.adminService.updateProduct(product.id, payload).subscribe({
+      next: () => {
+        const user = this.currentUser();
+        this.adminService.loadProducts(user?.tenantId || 'sociedad_selecta_001'); // Recarga tabla
+        this.closeEditProduct();
+      },
+      error: (err) => console.error('Error guardando producto:', err)
+    });
+  }
+
+  // --- FUNCIONES CAJERO ---
   updateLoginEmail(e: any) { this.loginEmail.set(e.target.value); }
   updateLoginPin(e: any) { this.loginPin.set(e.target.value); }
-
-  onLogin() {
-    this.authService.login(this.loginEmail(), this.loginPin());
-    this.loginEmail.set('');
-    this.loginPin.set('');
-  }
-
-  onLogout() {
-    this.authService.logout();
-    this.orderService.clearCart(); 
-  }
-
-  // --- FUNCIONES DEL MENÚ Y COMANDA ---
+  onLogin() { this.authService.login(this.loginEmail(), this.loginPin()); this.loginEmail.set(''); this.loginPin.set(''); }
+  onLogout() { this.authService.logout(); this.orderService.clearCart(); }
   onProductClick(product: Product) { this.orderService.addToCart(product); }
   onSelectCategory(category: string) { this.productService.setCategory(category); }
   onRemoveItem(productId: string) { this.orderService.removeItem(productId); }
   onClearOrder() { this.orderService.clearCart(); }
   onUpdateQuantity(productId: string, delta: number) { this.orderService.updateQuantity(productId, delta); }
-
-  // --- FUNCIONES DEL MODAL DE COBRO ---
   openCheckoutModal() { this.isModalOpen.set(true); }
   closeModal() { this.isModalOpen.set(false); this.paymentMethod.set('Efectivo'); }
   setPaymentMethod(method: string) { this.paymentMethod.set(method); }
-
-  confirmCheckout() {
-    this.orderService.checkoutOrder('sociedad_selecta_001', this.paymentMethod());
-    this.closeModal();
-  }
-  // <-- NUEVA FUNCIÓN: Se dispara cuando el jefe cambia el selector de fechas
-  onChangeSalesPeriod(event: any) {
-    const period = event.target.value;
-    this.salesPeriod.set(period);
-    
-    const user = this.currentUser();
-    if (user) {
-      this.adminService.loadSales(user.tenantId || 'sociedad_selecta_001', period);
-    }
-  }
+  confirmCheckout() { this.orderService.checkoutOrder('sociedad_selecta_001', this.paymentMethod()); this.closeModal(); }
 }

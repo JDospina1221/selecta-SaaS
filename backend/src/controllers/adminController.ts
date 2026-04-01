@@ -94,3 +94,44 @@ export const getSalesReport = async (req: Request, res: Response): Promise<void>
     res.status(500).json({ error: 'Error interno al cargar el historial' });
   }
 };
+
+// --- INVENTARIO: Traer todos los productos ---
+export const getAdminProducts = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.query.tenantId as string;
+    if (!tenantId) {
+      res.status(400).json({ error: 'Falta el ID de la empresa' });
+      return;
+    }
+
+    const snapshot = await db.collection('products').where('tenantId', '==', tenantId).get();
+    const products = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.status(200).json(products);
+  } catch (error) {
+    console.error('Error cargando inventario:', error);
+    res.status(500).json({ error: 'Error interno al cargar inventario' });
+  }
+};
+
+// --- INVENTARIO: Actualizar precio, costo y stock ---
+export const updateProduct = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params as { id: string };
+    const { price, cost, stock } = req.body;
+
+    await db.collection('products').doc(id).update({
+      price: Number(price),
+      cost: Number(cost),
+      stock: Number(stock)
+    });
+
+    res.status(200).json({ message: '¡Producto actualizado melo!' });
+  } catch (error) {
+    console.error('Error actualizando producto:', error);
+    res.status(500).json({ error: 'Error interno al guardar cambios' });
+  }
+};

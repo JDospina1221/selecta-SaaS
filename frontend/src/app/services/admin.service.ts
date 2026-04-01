@@ -17,7 +17,8 @@ export class AdminService {
   private apiUrl = 'http://localhost:3000/api/admin';
 
   kpis = signal<DashboardKPIs | null>(null);
-  sales = signal<any[]>([]); // <-- NUEVO: Aquí guardaremos la lista de ventas
+  sales = signal<any[]>([]);
+  products = signal<any[]>([]); // <-- Variable para el inventario
   isLoading = signal(false);
 
   loadKPIs(tenantId: string) {
@@ -29,13 +30,27 @@ export class AdminService {
       });
   }
 
-  // <-- NUEVO: Función para traer la tabla de ventas
   loadSales(tenantId: string, period: string = 'all') {
     this.isLoading.set(true);
     this.http.get<any[]>(`${this.apiUrl}/reports/sales?tenantId=${tenantId}&period=${period}`)
       .subscribe({
         next: (data) => { this.sales.set(data); this.isLoading.set(false); },
-        error: (err) => { console.error('Error cargando ventas:', err); this.isLoading.set(false); }
+        error: (err) => { console.error(err); this.isLoading.set(false); }
       });
+  }
+
+  // <-- Cargar Inventario
+  loadProducts(tenantId: string) {
+    this.isLoading.set(true);
+    this.http.get<any[]>(`${this.apiUrl}/products?tenantId=${tenantId}`)
+      .subscribe({
+        next: (data) => { this.products.set(data); this.isLoading.set(false); },
+        error: (err) => { console.error(err); this.isLoading.set(false); }
+      });
+  }
+
+  // <-- Guardar Cambios del Producto
+  updateProduct(productId: string, payload: any) {
+    return this.http.put(`${this.apiUrl}/products/${productId}`, payload);
   }
 }
