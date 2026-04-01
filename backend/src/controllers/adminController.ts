@@ -4,43 +4,103 @@ import { db } from '../config/firebase';
 export const getDashboardKPIs = async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.query.tenantId as string;
-    
+    const start = req.query.startDate as string;
+    const end = req.query.endDate as string;
+
     if (!tenantId) {
-      res.status(400).json({ error: 'Falta el ID de la empresa (tenantId)' });
+      res.status(400).json({ error: 'Falta el ID de la empresa' });
       return;
     }
 
-    // Traemos las órdenes de la base de datos
-    const ordersSnapshot = await db.collection('orders').where('tenantId', '==', tenantId).get();
+    let startDate = new Date(0); 
+    let endDate = new Date();    
 
-    let totalRevenue = 0;
-    let totalOrders = ordersSnapshot.size;
-    let totalCost = 0;
+    if (start) startDate = new Date(`${start}T00:00:00`);
+    if (end) endDate = new Date(`${end}T23:59:59`);
+
+    const [ordersSnapshot, expensesSnapshot] = await Promise.all([
+      db.collection('orders').where('tenantId', '==', tenantId).get(),
+      db.collection('expenses').where('tenantId', '==', tenantId).get()
+    ]);
+
+    let totalRevenue = 0; 
+    let totalCOGS = 0;    
+    let totalOrders = 0;
+
+    // --- NUEVO: Diccionario para agrupar productos vendidos ---
+    const productSalesMap: Record<string, { qty: number, revenue: number, cogs: number, category: string }> = {};
 
     ordersSnapshot.forEach(doc => {
       const order = doc.data();
-      totalRevenue += order.total || 0;
+      const orderDate = new Date(order.createdAt);
       
-      // AHORA SÍ: Usamos el costo real que guardó el cajero.
-      // Si la orden es vieja y no tiene totalCost (de nuestras pruebas anteriores), 
-      // le ponemos 0 temporalmente para que no se dañe la suma.
-      totalCost += order.totalCost || 0; 
+      if (orderDate >= startDate && orderDate <= endDate) {
+        totalRevenue += order.total || 0;
+        totalCOGS += order.totalCost || 0;
+        totalOrders++;
+
+        // Agrupamos qué productos se vendieron en esta orden
+        if (order.items && Array.isArray(order.items)) {
+          order.items.forEach((item: any) => {
+            const name = item.product.name;
+            if (!productSalesMap[name]) {
+              productSalesMap[name] = { qty: 0, revenue: 0, cogs: 0, category: item.product.category };
+            }
+            productSalesMap[name].qty += item.quantity;
+            productSalesMap[name].revenue += (item.product.price * item.quantity);
+            productSalesMap[name].cogs += ((item.product.cost || 0) * item.quantity);
+          });
+        }
+      }
     });
 
-    const netProfit = totalRevenue - totalCost;
-    const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-    const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+    // Convertimos el diccionario en un arreglo y lo ordenamos por los más vendidos
+    const topProducts = Object.entries(productSalesMap)
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a, b) => b.qty - a.qty);
 
+    let totalExpenses = 0; 
+    // --- NUEVO: Arreglo para guardar el detalle de gastos del periodo ---
+    const expensesDetail: any[] = [];
+    
+    expensesSnapshot.forEach(doc => {
+      const expense = doc.data();
+      const expenseDate = new Date(expense.createdAt);
+      
+      if (expenseDate >= startDate && expenseDate <= endDate) {
+        totalExpenses += expense.amount || 0;
+        expensesDetail.push({
+          description: expense.description,
+          category: expense.category,
+          amount: expense.amount,
+          date: expense.createdAt
+        });
+      }
+    });
+
+    // Ordenamos los gastos por los más caros primero
+    expensesDetail.sort((a, b) => b.amount - a.amount);
+
+    const netProfit = totalRevenue - totalCOGS - totalExpenses;
+    const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0';
+
+    // Mandamos los totales Y los desgloses al Frontend
     res.status(200).json({
       totalRevenue,
+      totalCOGS,
+      totalExpenses,
       netProfit,
       averageTicket,
       totalOrders,
-      profitMargin: profitMargin.toFixed(1) // Redondeado a 1 decimal
+      profitMargin,
+      topProducts,     // <-- El Drill-down de ventas y costos
+      expensesDetail   // <-- El Drill-down de la caja menor
     });
+
   } catch (error) {
-    console.error('Error calculando KPIs:', error);
-    res.status(500).json({ error: 'Error interno calculando finanzas' });
+    console.error('Error calculando KPIs del Dashboard:', error);
+    res.status(500).json({ error: 'Error interno al cargar el dashboard' });
   }
 };
 

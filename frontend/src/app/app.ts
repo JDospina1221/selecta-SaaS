@@ -23,20 +23,26 @@ export class App implements OnInit {
   // --- VARIABLES DASHBOARD ADMIN ---
   adminKpis = this.adminService.kpis;
   adminSales = this.adminService.sales; 
-  adminProducts = this.adminService.products; // <-- INVENTARIO
+  adminProducts = this.adminService.products; 
+  adminExpenses = this.adminService.expenses;
   isAdminLoading = this.adminService.isLoading;
   adminCurrentView = signal('DASHBOARD');
   salesPeriod = signal('all');
-  adminExpenses = this.adminService.expenses; // <-- GASTOS (CAJA MENOR)
+  dashStartDate = signal('');
+  dashEndDate = signal('');
 
-  // --- VARIABLES MODAL INVENTARIO ---
+  // --- VARIABLES MODAL DRILL-DOWN (DASHBOARD) ---
+  isDetailModalOpen = signal(false);
+  detailType = signal(''); 
+  detailTitle = signal('');
+
+  // --- VARIABLES MODALES INVENTARIO Y FINANZAS ---
   isEditProductModalOpen = signal(false);
   editingProduct = signal<any>(null);
   editPrice = signal(0);
   editCost = signal(0);
   editStock = signal(0);
 
-  // --- VARIABLES MODAL GASTOS ---
   isExpenseModalOpen = signal(false);
   expenseDesc = signal('');
   expenseAmount = signal(0);
@@ -65,14 +71,18 @@ export class App implements OnInit {
 
   ngOnInit() {}
 
-  // --- NAVEGACIÓN ADMIN ---
-setAdminView(view: string) {
+  // --- NAVEGACIÓN Y FILTROS ADMIN ---
+  setAdminView(view: string) {
     this.adminCurrentView.set(view);
     const user = this.currentUser();
     if (!user) return;
 
     if (view === 'REPORTS') this.adminService.loadSales(user.tenantId || 'sociedad_selecta_001', this.salesPeriod());
-    else if (view === 'DASHBOARD') this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
+    else if (view === 'DASHBOARD') {
+      this.dashStartDate.set('');
+      this.dashEndDate.set('');
+      this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
+    }
     else if (view === 'INVENTORY') this.adminService.loadProducts(user.tenantId || 'sociedad_selecta_001'); 
     else if (view === 'FINANCE') this.adminService.loadExpenses(user.tenantId || 'sociedad_selecta_001');
   }
@@ -84,6 +94,36 @@ setAdminView(view: string) {
     if (user) this.adminService.loadSales(user.tenantId || 'sociedad_selecta_001', period);
   }
 
+  updateDashStart(e: any) { this.dashStartDate.set(e.target.value); }
+  updateDashEnd(e: any) { this.dashEndDate.set(e.target.value); }
+
+  applyDashboardFilter() {
+    const user = this.currentUser();
+    if (!user) return;
+    if (this.dashStartDate() && this.dashEndDate() && this.dashStartDate() > this.dashEndDate()) {
+      alert('Manito, la fecha de inicio no puede ser mayor a la final.');
+      return;
+    }
+    this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001', this.dashStartDate(), this.dashEndDate());
+  }
+
+  clearDashboardFilter() {
+    this.dashStartDate.set('');
+    this.dashEndDate.set('');
+    const user = this.currentUser();
+    if (user) this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
+  }
+
+  // --- FUNCIONES MODAL DETALLES DASHBOARD (DRILL-DOWN) ---
+  openDetailModal(type: string) {
+    this.detailType.set(type);
+    if (type === 'REVENUE') this.detailTitle.set('Desglose de Ingresos por Producto');
+    else if (type === 'COGS') this.detailTitle.set('Desglose de Costos de Insumos');
+    else if (type === 'EXPENSES') this.detailTitle.set('Desglose de Caja Menor (Egresos)');
+    this.isDetailModalOpen.set(true);
+  }
+  closeDetailModal() { this.isDetailModalOpen.set(false); }
+
   // --- FUNCIONES INVENTARIO ---
   openEditProduct(product: any) {
     this.editingProduct.set(product);
@@ -92,30 +132,18 @@ setAdminView(view: string) {
     this.editStock.set(product.stock || 0);
     this.isEditProductModalOpen.set(true);
   }
-
-  closeEditProduct() {
-    this.isEditProductModalOpen.set(false);
-    this.editingProduct.set(null);
-  }
-
+  closeEditProduct() { this.isEditProductModalOpen.set(false); this.editingProduct.set(null); }
   updateEditPrice(e: any) { this.editPrice.set(Number(e.target.value)); }
   updateEditCost(e: any) { this.editCost.set(Number(e.target.value)); }
   updateEditStock(e: any) { this.editStock.set(Number(e.target.value)); }
-
   saveProductChanges() {
     const product = this.editingProduct();
     if (!product) return;
-
-    const payload = {
-      price: this.editPrice(),
-      cost: this.editCost(),
-      stock: this.editStock()
-    };
-
+    const payload = { price: this.editPrice(), cost: this.editCost(), stock: this.editStock() };
     this.adminService.updateProduct(product.id, payload).subscribe({
       next: () => {
         const user = this.currentUser();
-        this.adminService.loadProducts(user?.tenantId || 'sociedad_selecta_001'); // Recarga tabla
+        this.adminService.loadProducts(user?.tenantId || 'sociedad_selecta_001');
         this.closeEditProduct();
       },
       error: (err) => console.error('Error guardando producto:', err)
@@ -123,38 +151,17 @@ setAdminView(view: string) {
   }
 
   // --- FUNCIONES FINANZAS ---
-  openExpenseModal() {
-    this.expenseDesc.set('');
-    this.expenseAmount.set(0);
-    this.expenseCategory.set('Insumos');
-    this.isExpenseModalOpen.set(true);
-  }
-
+  openExpenseModal() { this.expenseDesc.set(''); this.expenseAmount.set(0); this.expenseCategory.set('Insumos'); this.isExpenseModalOpen.set(true); }
   closeExpenseModal() { this.isExpenseModalOpen.set(false); }
-
   updateExpenseDesc(e: any) { this.expenseDesc.set(e.target.value); }
   updateExpenseAmount(e: any) { this.expenseAmount.set(Number(e.target.value)); }
   updateExpenseCategory(e: any) { this.expenseCategory.set(e.target.value); }
-
   saveExpense() {
     const user = this.currentUser();
-    if (!user || !this.expenseDesc() || this.expenseAmount() <= 0) {
-      alert('Papi, llene bien la descripción y el monto.');
-      return;
-    }
-
-    const payload = {
-      tenantId: user.tenantId || 'sociedad_selecta_001',
-      description: this.expenseDesc(),
-      amount: this.expenseAmount(),
-      category: this.expenseCategory()
-    };
-
+    if (!user || !this.expenseDesc() || this.expenseAmount() <= 0) return alert('Llene bien la descripción y el monto.');
+    const payload = { tenantId: user.tenantId || 'sociedad_selecta_001', description: this.expenseDesc(), amount: this.expenseAmount(), category: this.expenseCategory() };
     this.adminService.addExpense(payload).subscribe({
-      next: () => {
-        this.adminService.loadExpenses(payload.tenantId); // Recarga la tabla
-        this.closeExpenseModal();
-      },
+      next: () => { this.adminService.loadExpenses(payload.tenantId); this.closeExpenseModal(); },
       error: (err) => console.error('Error guardando gasto:', err)
     });
   }

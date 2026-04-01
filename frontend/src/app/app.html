@@ -40,12 +40,8 @@
     <header class="bg-gray-900 text-white p-4 shadow-md flex justify-between items-center">
       <h1 class="text-2xl font-bold tracking-wide">Sociedad Selecta <span class="text-gray-400 text-lg font-normal">| POS</span></h1>
       <div class="flex items-center gap-4">
-        <div class="bg-gray-800 px-4 py-1 rounded-full text-sm font-medium">
-          👤 {{ currentUser()?.name }}
-        </div>
-        <button (click)="onLogout()" class="text-red-400 hover:text-red-300 font-bold text-sm bg-gray-800 hover:bg-gray-700 px-4 py-1.5 rounded-full transition-colors">
-          Cerrar Sesión
-        </button>
+        <div class="bg-gray-800 px-4 py-1 rounded-full text-sm font-medium">👤 {{ currentUser()?.name }}</div>
+        <button (click)="onLogout()" class="text-red-400 hover:text-red-300 font-bold text-sm bg-gray-800 hover:bg-gray-700 px-4 py-1.5 rounded-full transition-colors">Cerrar Sesión</button>
       </div>
     </header>
 
@@ -137,7 +133,6 @@
 
 } @else if (currentUser()?.role === 'ADMIN') {
   <div class="min-h-screen bg-gray-50 font-sans flex overflow-hidden text-gray-800">
-    
     <aside class="w-64 bg-gray-900 text-white flex flex-col shadow-2xl z-20">
       <div class="p-6 border-b border-gray-800">
         <h1 class="text-2xl font-black tracking-tight text-white">Selecta<span class="text-blue-500">SaaS</span></h1>
@@ -159,40 +154,65 @@
         <h2 class="text-2xl font-bold text-gray-800">Resumen del Negocio</h2>
         <div class="flex items-center gap-3">
           <span class="text-sm font-bold text-gray-500 uppercase">Sucursal:</span>
-          <select class="bg-gray-100 border-none text-gray-800 font-bold rounded-lg py-2 px-4 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer">
-            <option>Todas las Sucursales</option>
-            <option>Sede Norte</option>
-            <option>Sede Sur</option>
-          </select>
+          <select class="bg-gray-100 border-none text-gray-800 font-bold rounded-lg py-2 px-4 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"><option>Todas las Sucursales</option></select>
         </div>
       </header>
 
       <div class="p-8">
         
         @if (adminCurrentView() === 'DASHBOARD') {
-          @if (isAdminLoading()) {
-            <div class="flex justify-center items-center h-40"><p class="text-gray-500 font-bold animate-pulse">Calculando billete...</p></div>
-          } @else if (adminKpis()) {
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-2xl">💵</div><p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Ingresos Totales</p></div>
-                <h3 class="text-3xl font-black text-gray-900">${{ adminKpis()?.totalRevenue | number }}</h3>
-              </div>
-              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 relative overflow-hidden">
-                <div class="absolute top-0 right-0 bg-blue-500 text-white text-xs font-black px-3 py-1 rounded-bl-lg">Margen: {{ adminKpis()?.profitMargin }}%</div>
-                <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl">💰</div><p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Ganancia Neta</p></div>
-                <h3 class="text-3xl font-black text-blue-600">${{ adminKpis()?.netProfit | number }}</h3>
-              </div>
-              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-2xl">🧾</div><p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Ticket Promedio</p></div>
-                <h3 class="text-3xl font-black text-gray-900">${{ adminKpis()?.averageTicket | number:'1.0-0' }}</h3>
-              </div>
-              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-2xl">🍔</div><p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Órdenes Facturadas</p></div>
-                <h3 class="text-3xl font-black text-gray-900">{{ adminKpis()?.totalOrders }}</h3>
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div><h3 class="font-bold text-gray-800">Rendimiento Financiero</h3><p class="text-xs text-gray-500">Filtra las métricas por un rango de fechas exacto</p></div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2"><span class="text-sm font-bold text-gray-500">Desde:</span><input type="date" [value]="dashStartDate()" (change)="updateDashStart($event)" class="bg-gray-50 border border-gray-300 text-gray-800 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"></div>
+              <div class="flex items-center gap-2"><span class="text-sm font-bold text-gray-500">Hasta:</span><input type="date" [value]="dashEndDate()" (change)="updateDashEnd($event)" class="bg-gray-50 border border-gray-300 text-gray-800 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"></div>
+              <div class="flex items-center gap-2 border-l border-gray-200 pl-3 ml-1">
+                <button (click)="clearDashboardFilter()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2 px-4 rounded-lg shadow-sm transition-colors text-sm">Limpiar</button>
+                <button (click)="applyDashboardFilter()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors text-sm">Filtrar</button>
               </div>
             </div>
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center text-gray-400 border-dashed"><span class="text-4xl block mb-2">📈</span><p class="font-bold text-lg">Área reservada para gráficas de barras</p></div>
+          </div>
+
+          @if (isAdminLoading()) {
+            <div class="flex justify-center items-center h-40"><p class="text-gray-500 font-bold animate-pulse">Calculando billete y cruzando cuentas...</p></div>
+          } @else if (adminKpis()) {
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              
+              <div (click)="openDetailModal('REVENUE')" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-500 hover:shadow-md transition-all relative group">
+                <div class="absolute top-4 right-4 text-xs font-bold text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1"><span>🔍</span> Ver detalle</div>
+                <div class="flex items-center gap-4 mb-2"><div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-xl">💵</div><p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Ingresos Brutos</p></div>
+                <h3 class="text-3xl font-black text-gray-900">${{ adminKpis()?.totalRevenue | number }}</h3>
+                <p class="text-xs text-gray-400 mt-2">Todo lo facturado en caja</p>
+              </div>
+
+              <div (click)="openDetailModal('COGS')" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-500 hover:shadow-md transition-all relative group">
+                <div class="absolute top-4 right-4 text-xs font-bold text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1"><span>🔍</span> Ver detalle</div>
+                <div class="flex items-center gap-4 mb-2"><div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-xl">📦</div><p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Costo Insumos (COGS)</p></div>
+                <h3 class="text-3xl font-black text-gray-900">-${{ adminKpis()?.totalCOGS | number }}</h3>
+                <p class="text-xs text-gray-400 mt-2">Costo real de preparación</p>
+              </div>
+
+              <div (click)="openDetailModal('EXPENSES')" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-500 hover:shadow-md transition-all relative group">
+                <div class="absolute top-4 right-4 text-xs font-bold text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1"><span>🔍</span> Ver detalle</div>
+                <div class="flex items-center gap-4 mb-2"><div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xl">📉</div><p class="text-gray-500 font-bold uppercase text-xs tracking-wider">Gastos Caja Menor</p></div>
+                <h3 class="text-3xl font-black text-gray-900">-${{ adminKpis()?.totalExpenses | number }}</h3>
+                <p class="text-xs text-gray-400 mt-2">Servicios, insumos extra, nómina</p>
+              </div>
+
+              <div class="bg-gray-900 p-6 rounded-2xl shadow-md border border-gray-800 relative overflow-hidden md:col-span-2">
+                <div class="absolute top-0 right-0 text-white text-xs font-black px-4 py-2 rounded-bl-xl" [class]="(adminKpis()?.netProfit || 0) >= 0 ? 'bg-blue-500' : 'bg-red-600'">Margen Real: {{ adminKpis()?.profitMargin }}%</div>
+                <div class="flex items-center gap-4 mb-2"><div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-xl" [class]="(adminKpis()?.netProfit || 0) >= 0 ? 'bg-blue-500' : 'bg-red-600'">{{ (adminKpis()?.netProfit || 0) >= 0 ? '💰' : '🚨' }}</div><p class="text-gray-400 font-bold uppercase text-xs tracking-wider">{{ (adminKpis()?.netProfit || 0) >= 0 ? 'Ganancia Neta (Libre)' : 'Pérdida Neta' }}</p></div>
+                <h3 class="text-4xl font-black" [class]="(adminKpis()?.netProfit || 0) >= 0 ? 'text-white' : 'text-red-400'">${{ adminKpis()?.netProfit | number }}</h3>
+                <p class="text-xs mt-2" [class]="(adminKpis()?.netProfit || 0) >= 0 ? 'text-gray-500' : 'text-red-400'">{{ (adminKpis()?.netProfit || 0) >= 0 ? 'Plata 100% libre para el negocio' : 'Pilas: Los gastos e insumos superaron las ventas' }}</p>
+              </div>
+
+              <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col justify-between">
+                <div><div class="flex items-center gap-3 mb-1"><span class="text-lg">🍔</span><p class="text-gray-500 font-bold uppercase text-xs">Órdenes Facturadas</p></div><h3 class="text-2xl font-black text-gray-900">{{ adminKpis()?.totalOrders }}</h3></div>
+                <div class="mt-4 pt-4 border-t border-gray-100"><div class="flex items-center gap-3 mb-1"><span class="text-lg">🧾</span><p class="text-gray-500 font-bold uppercase text-xs">Ticket Promedio</p></div><h3 class="text-2xl font-black text-gray-900">${{ adminKpis()?.averageTicket | number:'1.0-0' }}</h3></div>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center text-gray-400 border-dashed h-64 flex flex-col items-center justify-center"><span class="text-5xl block mb-4">📊</span><p class="font-bold text-lg">Área reservada para gráficas de tendencias</p><p class="text-sm">Aquí conectaremos los picos de ventas por día</p></div>
           }
         } 
         
@@ -202,12 +222,7 @@
               <h3 class="text-xl font-bold text-gray-800">Historial de Comandas</h3>
               <div class="flex items-center gap-3">
                 <span class="text-sm font-bold text-gray-500 uppercase">Ver:</span>
-                <select (change)="onChangeSalesPeriod($event)" class="bg-white border border-gray-300 text-gray-800 font-bold rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-sm shadow-sm">
-                  <option value="all" [selected]="salesPeriod() === 'all'">Todo el historial</option>
-                  <option value="day" [selected]="salesPeriod() === 'day'">Hoy</option>
-                  <option value="week" [selected]="salesPeriod() === 'week'">Esta Semana</option>
-                  <option value="month" [selected]="salesPeriod() === 'month'">Este Mes</option>
-                </select>
+                <select (change)="onChangeSalesPeriod($event)" class="bg-white border border-gray-300 text-gray-800 font-bold rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-sm shadow-sm"><option value="all" [selected]="salesPeriod() === 'all'">Todo el historial</option><option value="day" [selected]="salesPeriod() === 'day'">Hoy</option><option value="week" [selected]="salesPeriod() === 'week'">Esta Semana</option><option value="month" [selected]="salesPeriod() === 'month'">Este Mes</option></select>
                 <button class="bg-white border border-gray-300 text-gray-600 font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-100 transition-colors text-sm">Exportar CSV ⬇️</button>
               </div>
             </div>
@@ -217,21 +232,16 @@
                   <tr class="bg-white border-b border-gray-200 text-gray-500 uppercase text-xs tracking-wider"><th class="p-4 font-bold">Orden #</th><th class="p-4 font-bold">Fecha y Hora</th><th class="p-4 font-bold text-center">Productos</th><th class="p-4 font-bold">Método de Pago</th><th class="p-4 font-bold text-right">Total</th></tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                  @if (isAdminLoading()) {
-                    <tr><td colspan="5" class="p-8 text-center text-gray-400 font-bold animate-pulse">Cargando historial...</td></tr>
-                  } @else {
-                    @for (sale of adminSales(); track sale.id) {
-                      <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="p-4"><span class="font-black text-gray-800">#{{ sale.orderNumber || 'N/A' }}</span></td>
-                        <td class="p-4 text-sm text-gray-600 font-medium">{{ sale.createdAt | date:'short' }}</td>
-                        <td class="p-4 text-center"><span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold">{{ sale.items?.length || 0 }} items</span></td>
-                        <td class="p-4"><span [class]="sale.paymentMethod === 'Efectivo' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'" class="px-3 py-1 rounded-md text-xs font-black uppercase tracking-wide">{{ sale.paymentMethod || 'Efectivo' }}</span></td>
-                        <td class="p-4 text-right font-black text-gray-900 text-lg">${{ sale.total | number }}</td>
-                      </tr>
-                    } @empty {
-                      <tr><td colspan="5" class="p-8 text-center text-gray-400">No hay ventas registradas en esta sucursal.</td></tr>
-                    }
-                  }
+                  @if (isAdminLoading()) { <tr><td colspan="5" class="p-8 text-center text-gray-400 font-bold animate-pulse">Cargando historial...</td></tr> } 
+                  @else { @for (sale of adminSales(); track sale.id) {
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="p-4"><span class="font-black text-gray-800">#{{ sale.orderNumber || 'N/A' }}</span></td>
+                      <td class="p-4 text-sm text-gray-600 font-medium">{{ sale.createdAt | date:'short' }}</td>
+                      <td class="p-4 text-center"><span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold">{{ sale.items?.length || 0 }} items</span></td>
+                      <td class="p-4"><span [class]="sale.paymentMethod === 'Efectivo' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'" class="px-3 py-1 rounded-md text-xs font-black uppercase tracking-wide">{{ sale.paymentMethod || 'Efectivo' }}</span></td>
+                      <td class="p-4 text-right font-black text-gray-900 text-lg">${{ sale.total | number }}</td>
+                    </tr>
+                  } @empty { <tr><td colspan="5" class="p-8 text-center text-gray-400">No hay ventas registradas.</td></tr> } }
                 </tbody>
               </table>
             </div>
@@ -240,42 +250,20 @@
         
         @else if (adminCurrentView() === 'INVENTORY') {
           <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-              <h3 class="text-xl font-bold text-gray-800">Control de Inventario</h3>
-            </div>
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50"><h3 class="text-xl font-bold text-gray-800">Control de Inventario</h3></div>
             <div class="overflow-x-auto">
               <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="bg-white border-b border-gray-200 text-gray-500 uppercase text-xs tracking-wider">
-                    <th class="p-4 font-bold">Producto</th>
-                    <th class="p-4 font-bold">Categoría</th>
-                    <th class="p-4 font-bold text-center">Stock</th>
-                    <th class="p-4 font-bold text-right">Costo Fab.</th>
-                    <th class="p-4 font-bold text-right">Precio Venta</th>
-                    <th class="p-4 font-bold text-center">Acción</th>
-                  </tr>
-                </thead>
+                <thead><tr class="bg-white border-b border-gray-200 text-gray-500 uppercase text-xs tracking-wider"><th class="p-4 font-bold">Producto</th><th class="p-4 font-bold">Categoría</th><th class="p-4 font-bold text-center">Stock</th><th class="p-4 font-bold text-right">Costo Fab.</th><th class="p-4 font-bold text-right">Precio Venta</th><th class="p-4 font-bold text-center">Acción</th></tr></thead>
                 <tbody class="divide-y divide-gray-100">
-                  @if (isAdminLoading()) {
-                    <tr><td colspan="6" class="p-8 text-center text-gray-400 font-bold animate-pulse">Cargando bodega...</td></tr>
-                  } @else {
-                    @for (prod of adminProducts(); track prod.id) {
-                      <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="p-4 font-black text-gray-800">{{ prod.name }}</td>
-                        <td class="p-4 text-sm text-gray-600">{{ prod.category }}</td>
-                        <td class="p-4 text-center">
-                          <span [class]="(prod.stock || 0) <= 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'" class="px-3 py-1 rounded-full text-xs font-bold">
-                            {{ prod.stock || 0 }} unds
-                          </span>
-                        </td>
-                        <td class="p-4 text-right text-gray-500 font-bold">${{ (prod.cost || 0) | number }}</td>
-                        <td class="p-4 text-right text-blue-600 font-black">${{ prod.price | number }}</td>
-                        <td class="p-4 text-center">
-                          <button (click)="openEditProduct(prod)" class="bg-gray-900 text-white px-3 py-1 rounded-lg text-sm font-bold hover:bg-gray-700 transition-colors">Editar</button>
-                        </td>
-                      </tr>
-                    }
-                  }
+                  @if (isAdminLoading()) { <tr><td colspan="6" class="p-8 text-center text-gray-400 font-bold animate-pulse">Cargando bodega...</td></tr> } 
+                  @else { @for (prod of adminProducts(); track prod.id) {
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="p-4 font-black text-gray-800">{{ prod.name }}</td><td class="p-4 text-sm text-gray-600">{{ prod.category }}</td>
+                      <td class="p-4 text-center"><span [class]="(prod.stock || 0) <= 10 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'" class="px-3 py-1 rounded-full text-xs font-bold">{{ prod.stock || 0 }} unds</span></td>
+                      <td class="p-4 text-right text-gray-500 font-bold">${{ (prod.cost || 0) | number }}</td><td class="p-4 text-right text-blue-600 font-black">${{ prod.price | number }}</td>
+                      <td class="p-4 text-center"><button (click)="openEditProduct(prod)" class="bg-gray-900 text-white px-3 py-1 rounded-lg text-sm font-bold hover:bg-gray-700 transition-colors">Editar</button></td>
+                    </tr>
+                  } }
                 </tbody>
               </table>
             </div>
@@ -285,44 +273,21 @@
         @else if (adminCurrentView() === 'FINANCE') {
           <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-              <div>
-                <h3 class="text-xl font-bold text-gray-800">Caja Menor y Egresos</h3>
-                <p class="text-sm text-gray-500">Registra todos los gastos operativos del negocio</p>
-              </div>
-              <button (click)="openExpenseModal()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded-lg shadow-sm transition-colors text-sm flex items-center gap-2">
-                <span>➖</span> Registrar Gasto
-              </button>
+              <div><h3 class="text-xl font-bold text-gray-800">Caja Menor y Egresos</h3><p class="text-sm text-gray-500">Registra todos los gastos operativos del negocio</p></div>
+              <button (click)="openExpenseModal()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-5 rounded-lg shadow-sm transition-colors text-sm flex items-center gap-2"><span>➖</span> Registrar Gasto</button>
             </div>
-            
             <div class="overflow-x-auto">
               <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="bg-white border-b border-gray-200 text-gray-500 uppercase text-xs tracking-wider">
-                    <th class="p-4 font-bold">Fecha</th>
-                    <th class="p-4 font-bold">Descripción</th>
-                    <th class="p-4 font-bold text-center">Categoría</th>
-                    <th class="p-4 font-bold text-right">Monto</th>
-                  </tr>
-                </thead>
+                <thead><tr class="bg-white border-b border-gray-200 text-gray-500 uppercase text-xs tracking-wider"><th class="p-4 font-bold">Fecha</th><th class="p-4 font-bold">Descripción</th><th class="p-4 font-bold text-center">Categoría</th><th class="p-4 font-bold text-right">Monto</th></tr></thead>
                 <tbody class="divide-y divide-gray-100">
-                  @if (isAdminLoading()) {
-                    <tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold animate-pulse">Cargando libro contable...</td></tr>
-                  } @else {
-                    @for (expense of adminExpenses(); track expense.id) {
-                      <tr class="hover:bg-red-50 transition-colors">
-                        <td class="p-4 text-sm text-gray-600 font-medium">{{ expense.createdAt | date:'short' }}</td>
-                        <td class="p-4 font-bold text-gray-800">{{ expense.description }}</td>
-                        <td class="p-4 text-center">
-                          <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold">{{ expense.category }}</span>
-                        </td>
-                        <td class="p-4 text-right font-black text-red-600 text-lg">
-                          -${{ expense.amount | number }}
-                        </td>
-                      </tr>
-                    } @empty {
-                      <tr><td colspan="4" class="p-8 text-center text-gray-400">No hay egresos registrados. La caja está invicta.</td></tr>
-                    }
-                  }
+                  @if (isAdminLoading()) { <tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold animate-pulse">Cargando libro contable...</td></tr> } 
+                  @else { @for (expense of adminExpenses(); track expense.id) {
+                    <tr class="hover:bg-red-50 transition-colors">
+                      <td class="p-4 text-sm text-gray-600 font-medium">{{ expense.createdAt | date:'short' }}</td><td class="p-4 font-bold text-gray-800">{{ expense.description }}</td>
+                      <td class="p-4 text-center"><span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold">{{ expense.category }}</span></td>
+                      <td class="p-4 text-right font-black text-red-600 text-lg">-${{ expense.amount | number }}</td>
+                    </tr>
+                  } @empty { <tr><td colspan="4" class="p-8 text-center text-gray-400">No hay egresos registrados. La caja está invicta.</td></tr> } }
                 </tbody>
               </table>
             </div>
@@ -334,29 +299,13 @@
       @if (isEditProductModalOpen()) {
         <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-            <div class="bg-gray-900 text-white p-5 flex justify-between items-center">
-              <h3 class="text-xl font-bold">Editar {{ editingProduct()?.name }}</h3>
-              <button (click)="closeEditProduct()" class="text-gray-400 hover:text-white transition-colors">✖</button>
-            </div>
+            <div class="bg-gray-900 text-white p-5 flex justify-between items-center"><h3 class="text-xl font-bold">Editar {{ editingProduct()?.name }}</h3><button (click)="closeEditProduct()" class="text-gray-400 hover:text-white transition-colors">✖</button></div>
             <div class="p-6 flex flex-col gap-4">
-              <div>
-                <label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Precio de Venta ($)</label>
-                <input type="number" [value]="editPrice()" (input)="updateEditPrice($event)" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-blue-500 outline-none">
-              </div>
-              <div>
-                <label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Costo de Fabricación ($)</label>
-                <input type="number" [value]="editCost()" (input)="updateEditCost($event)" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-blue-500 outline-none">
-                <p class="text-xs text-gray-400 mt-1">Lo que le cuesta a Selecta hacer este producto.</p>
-              </div>
-              <div>
-                <label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Stock Actual (Unidades)</label>
-                <input type="number" [value]="editStock()" (input)="updateEditStock($event)" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-blue-500 outline-none">
-              </div>
+              <div><label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Precio de Venta ($)</label><input type="number" [value]="editPrice()" (input)="updateEditPrice($event)" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-blue-500 outline-none"></div>
+              <div><label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Costo de Fab. ($)</label><input type="number" [value]="editCost()" (input)="updateEditCost($event)" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-blue-500 outline-none"></div>
+              <div><label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Stock Actual (Unidades)</label><input type="number" [value]="editStock()" (input)="updateEditStock($event)" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-blue-500 outline-none"></div>
             </div>
-            <div class="p-4 border-t border-gray-100 bg-gray-50 flex gap-3">
-              <button (click)="closeEditProduct()" class="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-3 rounded-xl transition-colors">Cancelar</button>
-              <button (click)="saveProductChanges()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl shadow-md transition-colors">Guardar Cambios</button>
-            </div>
+            <div class="p-4 border-t border-gray-100 bg-gray-50 flex gap-3"><button (click)="closeEditProduct()" class="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-3 rounded-xl transition-colors">Cancelar</button><button (click)="saveProductChanges()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl shadow-md transition-colors">Guardar</button></div>
           </div>
         </div>
       }
@@ -364,32 +313,66 @@
       @if (isExpenseModalOpen()) {
         <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-            <div class="bg-red-600 text-white p-5 flex justify-between items-center">
-              <h3 class="text-xl font-bold">Registrar Salida de Dinero</h3>
-              <button (click)="closeExpenseModal()" class="text-red-200 hover:text-white transition-colors">✖</button>
-            </div>
+            <div class="bg-red-600 text-white p-5 flex justify-between items-center"><h3 class="text-xl font-bold">Registrar Salida de Dinero</h3><button (click)="closeExpenseModal()" class="text-red-200 hover:text-white transition-colors">✖</button></div>
             <div class="p-6 flex flex-col gap-4">
-              <div>
-                <label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Motivo del Gasto</label>
-                <input type="text" [value]="expenseDesc()" (input)="updateExpenseDesc($event)" placeholder="Ej. Pago a proveedor de pan" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-red-500 outline-none">
-              </div>
-              <div>
-                <label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Categoría</label>
-                <select (change)="updateExpenseCategory($event)" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-red-500 outline-none">
-                  <option value="Insumos" [selected]="expenseCategory() === 'Insumos'">🍅 Insumos / Materia Prima</option>
-                  <option value="Servicios" [selected]="expenseCategory() === 'Servicios'">⚡ Servicios (Agua, Luz, Gas)</option>
-                  <option value="Nómina" [selected]="expenseCategory() === 'Nómina'">👨‍🍳 Nómina / Turnos</option>
-                  <option value="Otros" [selected]="expenseCategory() === 'Otros'">🛒 Otros Gastos</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Monto Total ($)</label>
-                <input type="number" [value]="expenseAmount()" (input)="updateExpenseAmount($event)" placeholder="0" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-red-500 outline-none text-xl font-black text-red-600">
-              </div>
+              <div><label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Motivo del Gasto</label><input type="text" [value]="expenseDesc()" (input)="updateExpenseDesc($event)" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-red-500 outline-none"></div>
+              <div><label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Categoría</label><select (change)="updateExpenseCategory($event)" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-red-500 outline-none"><option value="Insumos">Insumos</option><option value="Servicios">Servicios</option><option value="Nómina">Nómina</option><option value="Otros">Otros</option></select></div>
+              <div><label class="block text-gray-700 font-bold mb-2 text-sm uppercase">Monto Total ($)</label><input type="number" [value]="expenseAmount()" (input)="updateExpenseAmount($event)" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl p-3 font-medium focus:ring-2 focus:ring-red-500 outline-none text-xl font-black text-red-600"></div>
             </div>
-            <div class="p-4 border-t border-gray-100 bg-gray-50 flex gap-3">
-              <button (click)="closeExpenseModal()" class="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-3 rounded-xl transition-colors">Cancelar</button>
-              <button (click)="saveExpense()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-3 rounded-xl shadow-md transition-colors">Confirmar Gasto</button>
+            <div class="p-4 border-t border-gray-100 bg-gray-50 flex gap-3"><button (click)="closeExpenseModal()" class="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-3 rounded-xl transition-colors">Cancelar</button><button (click)="saveExpense()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-3 rounded-xl shadow-md transition-colors">Confirmar Gasto</button></div>
+          </div>
+        </div>
+      }
+
+      @if (isDetailModalOpen()) {
+        <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="bg-gray-900 text-white p-5 flex justify-between items-center">
+              <h3 class="text-xl font-bold">{{ detailTitle() }}</h3>
+              <button (click)="closeDetailModal()" class="text-gray-400 hover:text-white transition-colors">✖</button>
+            </div>
+            
+            <div class="p-6 flex-1 overflow-y-auto bg-gray-50">
+              <table class="w-full text-left border-collapse bg-white shadow-sm rounded-lg overflow-hidden">
+                <thead>
+                  <tr class="bg-gray-100 border-b border-gray-200 text-gray-500 uppercase text-xs tracking-wider">
+                    @if (detailType() === 'EXPENSES') {
+                      <th class="p-4 font-bold">Fecha</th>
+                      <th class="p-4 font-bold">Motivo</th>
+                      <th class="p-4 font-bold text-center">Categoría</th>
+                      <th class="p-4 font-bold text-right">Monto</th>
+                    } @else {
+                      <th class="p-4 font-bold">Producto</th>
+                      <th class="p-4 font-bold text-center">Categoría</th>
+                      <th class="p-4 font-bold text-center">Cant. Vendida</th>
+                      <th class="p-4 font-bold text-right">Total Generado</th>
+                      <th class="p-4 font-bold text-right">Total Costo</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  @if (detailType() === 'EXPENSES') {
+                    @for (exp of adminKpis()?.expensesDetail; track exp.date) {
+                      <tr class="hover:bg-red-50 transition-colors">
+                        <td class="p-4 text-sm text-gray-600">{{ exp.date | date:'short' }}</td>
+                        <td class="p-4 font-bold text-gray-800">{{ exp.description }}</td>
+                        <td class="p-4 text-center"><span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold">{{ exp.category }}</span></td>
+                        <td class="p-4 text-right font-black text-red-600">-${{ exp.amount | number }}</td>
+                      </tr>
+                    } @empty { <tr><td colspan="4" class="p-8 text-center text-gray-400">No hay gastos en este periodo.</td></tr> }
+                  } @else {
+                    @for (prod of adminKpis()?.topProducts; track prod.name) {
+                      <tr class="hover:bg-blue-50 transition-colors">
+                        <td class="p-4 font-bold text-gray-800">{{ prod.name }}</td>
+                        <td class="p-4 text-center text-sm text-gray-600">{{ prod.category }}</td>
+                        <td class="p-4 text-center"><span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-black">{{ prod.qty }} unds</span></td>
+                        <td class="p-4 text-right font-black text-green-600">${{ prod.revenue | number }}</td>
+                        <td class="p-4 text-right font-black text-orange-600">-${{ prod.cogs | number }}</td>
+                      </tr>
+                    } @empty { <tr><td colspan="5" class="p-8 text-center text-gray-400">No hay ventas en este periodo.</td></tr> }
+                  }
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
