@@ -1,7 +1,11 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-export interface DashboardKPIs { totalRevenue: number; totalCOGS: number; totalExpenses: number; netProfit: number; averageTicket: number; totalOrders: number; profitMargin: string; topProducts?: any[]; expensesDetail?: any[]; dailyTrends?: any[]; }
+export interface DashboardKPIs { 
+  totalRevenue: number; totalCOGS: number; totalExpenses: number; netProfit: number; 
+  averageTicket: number; totalOrders: number; pendingOrders: number; holdOrders: number; totalCompleted: number; 
+  profitMargin: string; topProducts?: any[]; expensesDetail?: any[]; dailyTrends?: any[]; 
+}
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {

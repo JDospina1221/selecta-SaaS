@@ -18,7 +18,10 @@ export const getDashboardKPIs = async (req: Request, res: Response): Promise<voi
       db.collection('expenses').where('tenantId', '==', tenantId).get()
     ]);
 
-    let totalRevenue = 0, totalCOGS = 0, totalOrders = 0, totalExpenses = 0;
+    let totalRevenue = 0, totalCOGS = 0, validOrders = 0, totalExpenses = 0;
+    // --- NUEVAS MÉTRICAS DE ÓRDENES ---
+    let totalOrders = 0, pendingOrders = 0, holdOrders = 0, totalCompleted = 0;
+    
     const productSalesMap: Record<string, any> = {};
     const expensesDetail: any[] = [];
     const dailyDataMap: Record<string, { revenue: number, profit: number }> = {};
@@ -27,25 +30,35 @@ export const getDashboardKPIs = async (req: Request, res: Response): Promise<voi
       const order = doc.data();
       const orderDate = new Date(order.createdAt);
       
-      if (orderDate >= startDate && orderDate <= endDate && order.status !== 'Cancelado') {
-        const revenue = order.total || 0;
-        const cogs = order.totalCost || 0;
-        totalRevenue += revenue; totalCOGS += cogs; totalOrders++;
+      if (orderDate >= startDate && orderDate <= endDate) {
+        totalOrders++; // Contamos todas las órdenes del rango
+        
+        // Clasificamos por estado
+        if (order.status === 'Pendiente') pendingOrders++;
+        else if (order.status === 'Entregado') totalCompleted++;
+        else if (order.status === 'Cancelado') holdOrders++; // Usamos 'Cancelado' para Hold Orders
 
-        if (order.items) {
-          order.items.forEach((item: any) => {
-            const name = item.product.name;
-            if (!productSalesMap[name]) productSalesMap[name] = { qty: 0, revenue: 0, cogs: 0, category: item.product.category };
-            productSalesMap[name].qty += item.quantity;
-            productSalesMap[name].revenue += (item.product.price * item.quantity);
-            productSalesMap[name].cogs += ((item.product.cost || 0) * item.quantity);
-          });
+        // Finanzas: Solo calculamos plata si NO está cancelada
+        if (order.status !== 'Cancelado') {
+          const revenue = order.total || 0;
+          const cogs = order.totalCost || 0;
+          totalRevenue += revenue; totalCOGS += cogs; validOrders++;
+
+          if (order.items) {
+            order.items.forEach((item: any) => {
+              const name = item.product.name;
+              if (!productSalesMap[name]) productSalesMap[name] = { qty: 0, revenue: 0, cogs: 0, category: item.product.category };
+              productSalesMap[name].qty += item.quantity;
+              productSalesMap[name].revenue += (item.product.price * item.quantity);
+              productSalesMap[name].cogs += ((item.product.cost || 0) * item.quantity);
+            });
+          }
+
+          const dateStr = orderDate.toISOString().split('T')[0];
+          if (!dailyDataMap[dateStr]) dailyDataMap[dateStr] = { revenue: 0, profit: 0 };
+          dailyDataMap[dateStr].revenue += revenue;
+          dailyDataMap[dateStr].profit += (revenue - cogs);
         }
-
-        const dateStr = orderDate.toISOString().split('T')[0];
-        if (!dailyDataMap[dateStr]) dailyDataMap[dateStr] = { revenue: 0, profit: 0 };
-        dailyDataMap[dateStr].revenue += revenue;
-        dailyDataMap[dateStr].profit += (revenue - cogs);
       }
     });
 
@@ -64,11 +77,17 @@ export const getDashboardKPIs = async (req: Request, res: Response): Promise<voi
     const topProducts = Object.entries(productSalesMap).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.qty - a.qty);
     expensesDetail.sort((a, b) => b.amount - a.amount);
     const dailyTrends = Object.entries(dailyDataMap).map(([date, data]) => ({ date, ...data })).sort((a, b) => a.date.localeCompare(b.date));
+    
     const netProfit = totalRevenue - totalCOGS - totalExpenses;
-    const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    const averageTicket = validOrders > 0 ? totalRevenue / validOrders : 0;
     const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0';
 
-    res.status(200).json({ totalRevenue, totalCOGS, totalExpenses, netProfit, averageTicket, totalOrders, profitMargin, topProducts, expensesDetail, dailyTrends });
+    // Enviamos TODO al frontend
+    res.status(200).json({ 
+        totalRevenue, totalCOGS, totalExpenses, netProfit, 
+        averageTicket, totalOrders, pendingOrders, holdOrders, totalCompleted, 
+        profitMargin, topProducts, expensesDetail, dailyTrends 
+    });
   } catch (error) { res.status(500).json({ error: 'Error KPIs' }); }
 };
 
