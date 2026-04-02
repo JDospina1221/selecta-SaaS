@@ -1,17 +1,18 @@
 import { Request, Response } from 'express';
 import { db } from '../config/firebase';
 
+// ==========================================
+// 1. DASHBOARD FINANCIERO 
+// ==========================================
 export const getDashboardKPIs = async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.query.tenantId as string;
     const start = req.query.startDate as string;
     const end = req.query.endDate as string;
 
-    if (!tenantId) return Object.assign(res.status(400).json({ error: 'Falta el ID de la empresa' }));
+    if (!tenantId) return Object.assign(res.status(400).json({ error: 'Falta el ID' }));
 
-    let startDate = new Date(0); 
-    let endDate = new Date();    
-
+    let startDate = new Date(0), endDate = new Date();    
     if (start) startDate = new Date(`${start}T00:00:00`);
     if (end) endDate = new Date(`${end}T23:59:59`);
 
@@ -23,25 +24,20 @@ export const getDashboardKPIs = async (req: Request, res: Response): Promise<voi
     let totalRevenue = 0, totalCOGS = 0, totalOrders = 0, totalExpenses = 0;
     const productSalesMap: Record<string, any> = {};
     const expensesDetail: any[] = [];
-    
-    // --- NUEVO: Objeto para agrupar los datos día por día ---
     const dailyDataMap: Record<string, { revenue: number, profit: number }> = {};
 
-    // Procesar Órdenes
     ordersSnapshot.forEach(doc => {
       const order = doc.data();
       const orderDate = new Date(order.createdAt);
       
-      if (orderDate >= startDate && orderDate <= endDate) {
+      // EXCLUIMOS ÓRDENES CANCELADAS
+      if (orderDate >= startDate && orderDate <= endDate && order.status !== 'Cancelado') {
         const revenue = order.total || 0;
         const cogs = order.totalCost || 0;
         
-        totalRevenue += revenue;
-        totalCOGS += cogs;
-        totalOrders++;
+        totalRevenue += revenue; totalCOGS += cogs; totalOrders++;
 
-        // Desglose de productos (lo que hicimos en el paso anterior)
-        if (order.items && Array.isArray(order.items)) {
+        if (order.items) {
           order.items.forEach((item: any) => {
             const name = item.product.name;
             if (!productSalesMap[name]) productSalesMap[name] = { qty: 0, revenue: 0, cogs: 0, category: item.product.category };
@@ -51,24 +47,19 @@ export const getDashboardKPIs = async (req: Request, res: Response): Promise<voi
           });
         }
 
-        // --- NUEVO: Agrupar para la gráfica (Ingreso y Ganancia bruta del día) ---
-        const dateStr = orderDate.toISOString().split('T')[0]; // Fecha formato YYYY-MM-DD
+        const dateStr = orderDate.toISOString().split('T')[0];
         if (!dailyDataMap[dateStr]) dailyDataMap[dateStr] = { revenue: 0, profit: 0 };
         dailyDataMap[dateStr].revenue += revenue;
         dailyDataMap[dateStr].profit += (revenue - cogs);
       }
     });
 
-    // Procesar Gastos (Caja Menor)
     expensesSnapshot.forEach(doc => {
       const expense = doc.data();
       const expenseDate = new Date(expense.createdAt);
-      
       if (expenseDate >= startDate && expenseDate <= endDate) {
         totalExpenses += expense.amount || 0;
         expensesDetail.push({ description: expense.description, category: expense.category, amount: expense.amount, date: expense.createdAt });
-
-        // --- NUEVO: Restar los gastos del día a la gráfica de ganancia neta ---
         const dateStr = expenseDate.toISOString().split('T')[0];
         if (!dailyDataMap[dateStr]) dailyDataMap[dateStr] = { revenue: 0, profit: 0 };
         dailyDataMap[dateStr].profit -= (expense.amount || 0);
@@ -77,170 +68,82 @@ export const getDashboardKPIs = async (req: Request, res: Response): Promise<voi
 
     const topProducts = Object.entries(productSalesMap).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.qty - a.qty);
     expensesDetail.sort((a, b) => b.amount - a.amount);
-
-    // --- NUEVO: Convertir el mapa de días en un arreglo ordenado por fecha ---
-    const dailyTrends = Object.entries(dailyDataMap)
-      .map(([date, data]) => ({ date, ...data }))
-      .sort((a, b) => a.date.localeCompare(b.date)); // Orden cronológico
+    const dailyTrends = Object.entries(dailyDataMap).map(([date, data]) => ({ date, ...data })).sort((a, b) => a.date.localeCompare(b.date));
 
     const netProfit = totalRevenue - totalCOGS - totalExpenses;
     const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
     const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0';
 
-    res.status(200).json({
-      totalRevenue, totalCOGS, totalExpenses, netProfit, averageTicket, totalOrders, profitMargin, topProducts, expensesDetail,
-      dailyTrends // <-- Mandamos la data de la gráfica al Frontend
-    });
-  } catch (error) {
-    console.error('Error calculando KPIs:', error);
-    res.status(500).json({ error: 'Error interno al cargar el dashboard' });
-  }
+    res.status(200).json({ totalRevenue, totalCOGS, totalExpenses, netProfit, averageTicket, totalOrders, profitMargin, topProducts, expensesDetail, dailyTrends });
+  } catch (error) { res.status(500).json({ error: 'Error KPIs' }); }
 };
 
+// ==========================================
+// 2. REPORTES DE VENTAS
+// ==========================================
 export const getSalesReport = async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.query.tenantId as string;
-    const period = req.query.period as string || 'all'; // <-- Recibimos el filtro
+    const period = req.query.period as string || 'all';
+
+    let query: any = db.collection('orders').where('tenantId', '==', tenantId);
     
-    if (!tenantId) {
-      res.status(400).json({ error: 'Falta el ID de la empresa (tenantId)' });
-      return;
-    }
-
-    const ordersSnapshot = await db.collection('orders')
-      .where('tenantId', '==', tenantId)
-      .get();
-
-    let orders = ordersSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    // --- LÓGICA DE FILTRADO POR FECHAS ---
     if (period !== 'all') {
       const now = new Date();
       let startDate = new Date();
-
-      if (period === 'day') {
-        // Desde hoy a las 00:00:00
-        startDate.setHours(0, 0, 0, 0);
-      } else if (period === 'week') {
-        // Desde el domingo/lunes de esta semana
-        const firstDay = now.getDate() - now.getDay();
-        startDate.setDate(firstDay);
-        startDate.setHours(0, 0, 0, 0);
-      } else if (period === 'month') {
-        // Desde el día 1 de este mes
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      }
-
-      // Filtramos las órdenes que se crearon DESPUÉS de la fecha de inicio
-      orders = orders.filter((o: any) => new Date(o.createdAt) >= startDate);
+      if (period === 'day') startDate.setHours(0, 0, 0, 0);
+      else if (period === 'week') { startDate.setDate(now.getDate() - now.getDay()); startDate.setHours(0, 0, 0, 0); }
+      else if (period === 'month') startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      query = query.where('createdAt', '>=', startDate.toISOString());
     }
 
-    // Ordenamos las más recientes primero
-    orders.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    res.status(200).json(orders);
-  } catch (error) {
-    console.error('Error cargando reportes de ventas:', error);
-    res.status(500).json({ error: 'Error interno al cargar el historial' });
-  }
+    const snapshot = await query.get();
+    const sales = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+    sales.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    res.status(200).json(sales);
+  } catch (error) { res.status(500).json({ error: 'Error reportes' }); }
 };
 
-// --- INVENTARIO: Traer todos los productos ---
+// ==========================================
+// 3. INVENTARIO (Traer y Editar)
+// ==========================================
 export const getAdminProducts = async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.query.tenantId as string;
-    if (!tenantId) {
-      res.status(400).json({ error: 'Falta el ID de la empresa' });
-      return;
-    }
-
     const snapshot = await db.collection('products').where('tenantId', '==', tenantId).get();
-    const products = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
+    const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     res.status(200).json(products);
-  } catch (error) {
-    console.error('Error cargando inventario:', error);
-    res.status(500).json({ error: 'Error interno al cargar inventario' });
-  }
+  } catch (error) { res.status(500).json({ error: 'Error inventario' }); }
 };
 
-// --- INVENTARIO: Actualizar precio, costo y stock ---
 export const updateProduct = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params as { id: string };
+    // MAGIA DE TYPESCRIPT AQUÍ: Forzamos a que se lea como un string puro
+    const id = req.params.id as string; 
     const { price, cost, stock } = req.body;
-
-    await db.collection('products').doc(id).update({
-      price: Number(price),
-      cost: Number(cost),
-      stock: Number(stock)
-    });
-
-    res.status(200).json({ message: '¡Producto actualizado melo!' });
-  } catch (error) {
-    console.error('Error actualizando producto:', error);
-    res.status(500).json({ error: 'Error interno al guardar cambios' });
-  }
+    await db.collection('products').doc(id).update({ price, cost, stock });
+    res.status(200).json({ message: 'Producto actualizado' });
+  } catch (error) { res.status(500).json({ error: 'Error actualizando producto' }); }
 };
 
-// --- FINANZAS: Traer historial de gastos ---
+// ==========================================
+// 4. FINANZAS Y CAJA MENOR
+// ==========================================
 export const getExpenses = async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.query.tenantId as string;
-    if (!tenantId) {
-      res.status(400).json({ error: 'Falta el ID de la empresa' });
-      return;
-    }
-
     const snapshot = await db.collection('expenses').where('tenantId', '==', tenantId).get();
-    let expenses = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    // Ordenar del gasto más reciente al más viejo
+    const expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     expenses.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
     res.status(200).json(expenses);
-  } catch (error) {
-    console.error('Error cargando gastos:', error);
-    res.status(500).json({ error: 'Error interno al cargar finanzas' });
-  }
+  } catch (error) { res.status(500).json({ error: 'Error egresos' }); }
 };
 
-// --- FINANZAS: Registrar un nuevo gasto (Egreso) ---
 export const addExpense = async (req: Request, res: Response): Promise<void> => {
   try {
     const { tenantId, description, amount, category } = req.body;
-
-    if (!tenantId || !description || !amount) {
-      res.status(400).json({ error: 'Faltan datos para registrar el gasto' });
-      return;
-    }
-
-    const newExpense = {
-      tenantId,
-      description,
-      amount: Number(amount),
-      category: category || 'General',
-      createdAt: new Date().toISOString()
-    };
-
-    const docRef = await db.collection('expenses').add(newExpense);
-
-    res.status(201).json({
-      message: '¡Gasto registrado con éxito!',
-      id: docRef.id,
-      ...newExpense
-    });
-  } catch (error) {
-    console.error('Error guardando gasto:', error);
-    res.status(500).json({ error: 'Error interno al guardar el egreso' });
-  }
+    const newExpense = { tenantId, description, amount, category, createdAt: new Date().toISOString() };
+    await db.collection('expenses').add(newExpense);
+    res.status(201).json({ message: 'Gasto registrado' });
+  } catch (error) { res.status(500).json({ error: 'Error guardando gasto' }); }
 };

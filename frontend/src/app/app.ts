@@ -1,11 +1,11 @@
-import chart from 'chart.js/auto'; 
-import { Component, OnInit, inject, signal, effect } from '@angular/core';
+import { Component, OnInit, inject, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductService } from './services/product.service';
 import { OrderService } from './services/order.service';
 import { AuthService } from './services/auth.service';
 import { Product } from './models/product.models';
 import { AdminService } from './services/admin.service';
+import Chart from 'chart.js/auto';
 
 @Component({
   selector: 'app-root',
@@ -21,7 +21,7 @@ export class App implements OnInit {
   
   currentUser = this.authService.currentUser;
 
-  // --- VARIABLES DASHBOARD ADMIN ---
+  // --- VARIABLES ADMIN ---
   adminKpis = this.adminService.kpis;
   adminSales = this.adminService.sales; 
   adminProducts = this.adminService.products; 
@@ -29,57 +29,41 @@ export class App implements OnInit {
   isAdminLoading = this.adminService.isLoading;
   adminCurrentView = signal('DASHBOARD');
   salesPeriod = signal('all');
-  dashStartDate = signal('');
-  dashEndDate = signal('');
-  chartInstance: any = null; // Para guardar la instancia del gráfico y poder destruirlo antes de crear uno nuevo
+  dashStartDate = signal(''); dashEndDate = signal('');
+  chartInstance: any = null;
+  isDetailModalOpen = signal(false); detailType = signal(''); detailTitle = signal('');
+  isEditProductModalOpen = signal(false); editingProduct = signal<any>(null); editPrice = signal(0); editCost = signal(0); editStock = signal(0);
+  isExpenseModalOpen = signal(false); expenseDesc = signal(''); expenseAmount = signal(0); expenseCategory = signal('Insumos');
 
-  // --- VARIABLES MODAL DRILL-DOWN (DASHBOARD) ---
-  isDetailModalOpen = signal(false);
-  detailType = signal(''); 
-  detailTitle = signal('');
-
-  // --- VARIABLES MODALES INVENTARIO Y FINANZAS ---
-  isEditProductModalOpen = signal(false);
-  editingProduct = signal<any>(null);
-  editPrice = signal(0);
-  editCost = signal(0);
-  editStock = signal(0);
-
-  isExpenseModalOpen = signal(false);
-  expenseDesc = signal('');
-  expenseAmount = signal(0);
-  expenseCategory = signal('Insumos');
+  // Filtros Calculados para Reportes Admin
+  validSales = computed(() => this.adminSales().filter(s => s.status !== 'Cancelado'));
+  canceledSales = computed(() => this.adminSales().filter(s => s.status === 'Cancelado'));
 
   // --- VARIABLES CAJERO ---
-  loginEmail = signal('');
-  loginPin = signal('');
-  loginError = this.authService.loginError;
-  cart = this.orderService.cart;
-  subtotal = this.orderService.subtotal;
-  total = this.orderService.total;
-  categories = this.productService.categories;
-  selectedCategory = this.productService.selectedCategory;
-  filteredProducts = this.productService.filteredProducts;
-  isModalOpen = signal(false);
-  paymentMethod = signal('Efectivo'); 
-  isReceiptModalOpen = signal(false); // <-- NUEVO: Controla el modal del recibo
-  isReceiptLoading = signal(false);
-  lastOrderTicket = signal<any>(null); // <-- NUEVO: Guarda los datos de la última orden para mostrar en el recibo
-
+  loginEmail = signal(''); loginPin = signal(''); loginError = this.authService.loginError;
+  cashierView = signal('POS'); // <-- NUEVA: Controla si está en caja o gestión
+  cart = this.orderService.cart; subtotal = this.orderService.subtotal; total = this.orderService.total;
+  categories = this.productService.categories; selectedCategory = this.productService.selectedCategory; filteredProducts = this.productService.filteredProducts;
+  isModalOpen = signal(false); paymentMethod = signal('Efectivo'); 
+  isReceiptModalOpen = signal(false); isReceiptLoading = signal(false); lastOrderTicket = signal<any>(null);
+  
+  // Variables Gestión de Órdenes
+  activeOrders = this.orderService.activeOrders;
+  isCancelModalOpen = signal(false); cancelingOrder = signal<any>(null); cancelReason = signal(''); cancelRefundMethod = signal('Efectivo');
 
   constructor() {
     effect(() => {
       const user = this.currentUser();
-      if (user?.role === 'CAJERO') this.productService.getProducts(user.tenantId || 'sociedad_selecta_001');
+      if (user?.role === 'CAJERO') {
+        this.productService.getProducts(user.tenantId || 'sociedad_selecta_001');
+        this.orderService.loadActiveOrders(user.tenantId || 'sociedad_selecta_001');
+      }
       else if (user?.role === 'ADMIN') {
-        // Solo carga si es primera vez (para no hacer loops infinitos con el chart)
         if (!this.adminKpis()) this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
       }
 
-      // --- NUEVO: Dibuja la gráfica cuando hay datos ---
       const kpis = this.adminKpis();
       if (kpis && kpis.dailyTrends && this.adminCurrentView() === 'DASHBOARD') {
-        // Esperamos un milisegundo a que Angular pinte el HTML antes de graficar
         setTimeout(() => this.renderChart(kpis.dailyTrends || []), 0);
       }
     });
@@ -87,102 +71,33 @@ export class App implements OnInit {
 
   ngOnInit() {}
 
-  // --- NAVEGACIÓN Y FILTROS ADMIN ---
-  setAdminView(view: string) {
-    this.adminCurrentView.set(view);
+  // --- NAVEGACIÓN CAJERO ---
+  setCashierView(view: string) {
+    this.cashierView.set(view);
     const user = this.currentUser();
-    if (!user) return;
-
-    if (view === 'REPORTS') this.adminService.loadSales(user.tenantId || 'sociedad_selecta_001', this.salesPeriod());
-    else if (view === 'DASHBOARD') {
-      this.dashStartDate.set('');
-      this.dashEndDate.set('');
-      this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
-    }
-    else if (view === 'INVENTORY') this.adminService.loadProducts(user.tenantId || 'sociedad_selecta_001'); 
-    else if (view === 'FINANCE') this.adminService.loadExpenses(user.tenantId || 'sociedad_selecta_001');
+    if (view === 'ORDERS' && user) this.orderService.loadActiveOrders(user.tenantId || 'sociedad_selecta_001');
   }
 
-  onChangeSalesPeriod(event: any) {
-    const period = event.target.value;
-    this.salesPeriod.set(period);
-    const user = this.currentUser();
-    if (user) this.adminService.loadSales(user.tenantId || 'sociedad_selecta_001', period);
+  // --- ACCIONES ÓRDENES CAJERO ---
+  markAsDelivered(orderId: string) {
+    this.orderService.updateOrderStatus(orderId, 'Entregado').subscribe(() => {
+      this.orderService.loadActiveOrders(this.currentUser()?.tenantId || 'sociedad_selecta_001');
+    });
   }
-
-  updateDashStart(e: any) { this.dashStartDate.set(e.target.value); }
-  updateDashEnd(e: any) { this.dashEndDate.set(e.target.value); }
-
-  applyDashboardFilter() {
-    const user = this.currentUser();
-    if (!user) return;
-    if (this.dashStartDate() && this.dashEndDate() && this.dashStartDate() > this.dashEndDate()) {
-      alert('Manito, la fecha de inicio no puede ser mayor a la final.');
-      return;
-    }
-    this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001', this.dashStartDate(), this.dashEndDate());
-  }
-
-  clearDashboardFilter() {
-    this.dashStartDate.set('');
-    this.dashEndDate.set('');
-    const user = this.currentUser();
-    if (user) this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
-  }
-
-  // --- FUNCIONES MODAL DETALLES DASHBOARD (DRILL-DOWN) ---
-  openDetailModal(type: string) {
-    this.detailType.set(type);
-    if (type === 'REVENUE') this.detailTitle.set('Desglose de Ingresos por Producto');
-    else if (type === 'COGS') this.detailTitle.set('Desglose de Costos de Insumos');
-    else if (type === 'EXPENSES') this.detailTitle.set('Desglose de Caja Menor (Egresos)');
-    this.isDetailModalOpen.set(true);
-  }
-  closeDetailModal() { this.isDetailModalOpen.set(false); }
-
-  // --- FUNCIONES INVENTARIO ---
-  openEditProduct(product: any) {
-    this.editingProduct.set(product);
-    this.editPrice.set(product.price || 0);
-    this.editCost.set(product.cost || 0);
-    this.editStock.set(product.stock || 0);
-    this.isEditProductModalOpen.set(true);
-  }
-  closeEditProduct() { this.isEditProductModalOpen.set(false); this.editingProduct.set(null); }
-  updateEditPrice(e: any) { this.editPrice.set(Number(e.target.value)); }
-  updateEditCost(e: any) { this.editCost.set(Number(e.target.value)); }
-  updateEditStock(e: any) { this.editStock.set(Number(e.target.value)); }
-  saveProductChanges() {
-    const product = this.editingProduct();
-    if (!product) return;
-    const payload = { price: this.editPrice(), cost: this.editCost(), stock: this.editStock() };
-    this.adminService.updateProduct(product.id, payload).subscribe({
-      next: () => {
-        const user = this.currentUser();
-        this.adminService.loadProducts(user?.tenantId || 'sociedad_selecta_001');
-        this.closeEditProduct();
-      },
-      error: (err) => console.error('Error guardando producto:', err)
+  openCancelModal(order: any) { this.cancelingOrder.set(order); this.cancelReason.set(''); this.cancelRefundMethod.set(order.paymentMethod); this.isCancelModalOpen.set(true); }
+  closeCancelModal() { this.isCancelModalOpen.set(false); this.cancelingOrder.set(null); }
+  updateCancelReason(e: any) { this.cancelReason.set(e.target.value); }
+  updateCancelRefundMethod(e: any) { this.cancelRefundMethod.set(e.target.value); }
+  
+  confirmCancelOrder() {
+    if (!this.cancelReason()) return alert('Debe indicar un motivo');
+    this.orderService.updateOrderStatus(this.cancelingOrder().id, 'Cancelado', this.cancelReason(), this.cancelRefundMethod()).subscribe(() => {
+      this.orderService.loadActiveOrders(this.currentUser()?.tenantId || 'sociedad_selecta_001');
+      this.closeCancelModal();
     });
   }
 
-  // --- FUNCIONES FINANZAS ---
-  openExpenseModal() { this.expenseDesc.set(''); this.expenseAmount.set(0); this.expenseCategory.set('Insumos'); this.isExpenseModalOpen.set(true); }
-  closeExpenseModal() { this.isExpenseModalOpen.set(false); }
-  updateExpenseDesc(e: any) { this.expenseDesc.set(e.target.value); }
-  updateExpenseAmount(e: any) { this.expenseAmount.set(Number(e.target.value)); }
-  updateExpenseCategory(e: any) { this.expenseCategory.set(e.target.value); }
-  saveExpense() {
-    const user = this.currentUser();
-    if (!user || !this.expenseDesc() || this.expenseAmount() <= 0) return alert('Llene bien la descripción y el monto.');
-    const payload = { tenantId: user.tenantId || 'sociedad_selecta_001', description: this.expenseDesc(), amount: this.expenseAmount(), category: this.expenseCategory() };
-    this.adminService.addExpense(payload).subscribe({
-      next: () => { this.adminService.loadExpenses(payload.tenantId); this.closeExpenseModal(); },
-      error: (err) => console.error('Error guardando gasto:', err)
-    });
-  }
-
-  // --- FUNCIONES CAJERO ---
+  // --- CAJERO BASE ---
   updateLoginEmail(e: any) { this.loginEmail.set(e.target.value); }
   updateLoginPin(e: any) { this.loginPin.set(e.target.value); }
   onLogin() { this.authService.login(this.loginEmail(), this.loginPin()); this.loginEmail.set(''); this.loginPin.set(''); }
@@ -195,108 +110,96 @@ export class App implements OnInit {
   openCheckoutModal() { this.isModalOpen.set(true); }
   closeModal() { this.isModalOpen.set(false); this.paymentMethod.set('Efectivo'); }
   setPaymentMethod(method: string) { this.paymentMethod.set(method); }
+  
   confirmCheckout() {
     const user = this.currentUser();
     if (!user) return;
-
-    // 1. Cerramos modal de pago, abrimos el del recibo y activamos el Skeleton
-    this.closeModal(); 
-    this.isReceiptLoading.set(true);
-    this.isReceiptModalOpen.set(true);
-
-    // 2. Disparamos la petición a Firebase
-    this.orderService.checkoutOrder(user.tenantId || 'sociedad_selecta_001', this.paymentMethod())
-      .subscribe({
-        next: (response: any) => {
-          
-          // --- EL TRUCO NINJA DE UX ---
-          // Retrasamos la vista final 1.2 segundos para que la animación de carga se alcance a ver bien
-          setTimeout(() => {
-            const ticketData = {
-              orderNumber: response.orderNumber, // <-- El número oficial de la BD
-              date: new Date(),
-              items: [...this.cart()],
-              subtotal: this.subtotal(),
-              total: this.total(),
-              paymentMethod: this.paymentMethod()
-            };
-            
-            this.lastOrderTicket.set(ticketData);
-            this.isReceiptLoading.set(false); // Apagamos el Skeleton
-            this.orderService.clearCart(); // Limpiamos el carrito
-          }, 1200); 
-
-        },
-        error: (err) => {
-          console.error('Error al facturar:', err);
-          alert('Mano, hubo un error con Firebase. Revisa el internet.');
-          this.isReceiptModalOpen.set(false);
-          this.isReceiptLoading.set(false);
-        }
-      });
+    this.closeModal(); this.isReceiptLoading.set(true); this.isReceiptModalOpen.set(true);
+    this.orderService.checkoutOrder(user.tenantId || 'sociedad_selecta_001', this.paymentMethod()).subscribe({
+      next: (response: any) => {
+        setTimeout(() => {
+          this.lastOrderTicket.set({ orderNumber: response.orderNumber, date: new Date(), items: [...this.cart()], subtotal: this.subtotal(), total: this.total(), paymentMethod: this.paymentMethod() });
+          this.isReceiptLoading.set(false); this.orderService.clearCart();
+          this.orderService.loadActiveOrders(user.tenantId || 'sociedad_selecta_001'); // Refrescar lista de órdenes
+        }, 1200); 
+      },
+      error: (err) => { alert('Error con Firebase.'); this.isReceiptModalOpen.set(false); this.isReceiptLoading.set(false); }
+    });
   }
+  printTicket() { window.print(); }
+  closeReceipt() { this.isReceiptModalOpen.set(false); this.lastOrderTicket.set(null); this.orderService.clearCart(); }
 
-  // --- NUEVAS FUNCIONES PARA EL TICKET ---
-  printTicket() {
-    window.print(); // Llama a la ventana nativa de impresión/PDF del navegador
+  // --- ADMIN BASE ---
+  setAdminView(view: string) {
+    this.adminCurrentView.set(view);
+    const user = this.currentUser();
+    if (!user) return;
+    if (view === 'REPORTS' || view === 'CANCELED') this.adminService.loadSales(user.tenantId || 'sociedad_selecta_001', this.salesPeriod());
+    else if (view === 'DASHBOARD') { this.dashStartDate.set(''); this.dashEndDate.set(''); this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001'); }
+    else if (view === 'INVENTORY') this.adminService.loadProducts(user.tenantId || 'sociedad_selecta_001'); 
+    else if (view === 'FINANCE') this.adminService.loadExpenses(user.tenantId || 'sociedad_selecta_001');
   }
-
-  closeReceipt() {
-    this.isReceiptModalOpen.set(false);
-    this.lastOrderTicket.set(null);
-    // Como ya cobró y cerró el recibo, nos aseguramos de que el carrito esté vacío
-    this.orderService.clearCart(); 
+  onChangeSalesPeriod(event: any) {
+    const period = event.target.value; this.salesPeriod.set(period);
+    const user = this.currentUser();
+    if (user) this.adminService.loadSales(user.tenantId || 'sociedad_selecta_001', period);
   }
-
-  // --- FUNCIÓN DE GRÁFICAS ---
+  updateDashStart(e: any) { this.dashStartDate.set(e.target.value); }
+  updateDashEnd(e: any) { this.dashEndDate.set(e.target.value); }
+  applyDashboardFilter() {
+    const user = this.currentUser(); if (!user) return;
+    this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001', this.dashStartDate(), this.dashEndDate());
+  }
+  clearDashboardFilter() {
+    this.dashStartDate.set(''); this.dashEndDate.set('');
+    const user = this.currentUser(); if (user) this.adminService.loadKPIs(user.tenantId || 'sociedad_selecta_001');
+  }
+  openDetailModal(type: string) {
+    this.detailType.set(type);
+    if (type === 'REVENUE') this.detailTitle.set('Desglose de Ingresos por Producto');
+    else if (type === 'COGS') this.detailTitle.set('Desglose de Costos de Insumos');
+    else if (type === 'EXPENSES') this.detailTitle.set('Desglose de Caja Menor (Egresos)');
+    this.isDetailModalOpen.set(true);
+  }
+  closeDetailModal() { this.isDetailModalOpen.set(false); }
+  openEditProduct(product: any) { this.editingProduct.set(product); this.editPrice.set(product.price || 0); this.editCost.set(product.cost || 0); this.editStock.set(product.stock || 0); this.isEditProductModalOpen.set(true); }
+  closeEditProduct() { this.isEditProductModalOpen.set(false); this.editingProduct.set(null); }
+  updateEditPrice(e: any) { this.editPrice.set(Number(e.target.value)); }
+  updateEditCost(e: any) { this.editCost.set(Number(e.target.value)); }
+  updateEditStock(e: any) { this.editStock.set(Number(e.target.value)); }
+  saveProductChanges() {
+    const product = this.editingProduct(); if (!product) return;
+    this.adminService.updateProduct(product.id, { price: this.editPrice(), cost: this.editCost(), stock: this.editStock() }).subscribe({
+      next: () => { this.adminService.loadProducts(this.currentUser()?.tenantId || 'sociedad_selecta_001'); this.closeEditProduct(); }
+    });
+  }
+  openExpenseModal() { this.expenseDesc.set(''); this.expenseAmount.set(0); this.expenseCategory.set('Insumos'); this.isExpenseModalOpen.set(true); }
+  closeExpenseModal() { this.isExpenseModalOpen.set(false); }
+  updateExpenseDesc(e: any) { this.expenseDesc.set(e.target.value); }
+  updateExpenseAmount(e: any) { this.expenseAmount.set(Number(e.target.value)); }
+  updateExpenseCategory(e: any) { this.expenseCategory.set(e.target.value); }
+  saveExpense() {
+    const user = this.currentUser();
+    if (!user || !this.expenseDesc() || this.expenseAmount() <= 0) return alert('Llene datos.');
+    const payload = { tenantId: user.tenantId || 'sociedad_selecta_001', description: this.expenseDesc(), amount: this.expenseAmount(), category: this.expenseCategory() };
+    this.adminService.addExpense(payload).subscribe({
+      next: () => { this.adminService.loadExpenses(payload.tenantId); this.closeExpenseModal(); }
+    });
+  }
   renderChart(trends: any[]) {
     const canvas = document.getElementById('trendChart') as HTMLCanvasElement;
     if (!canvas) return;
-
-    // Si ya había una gráfica, la destruimos para no encimarla
-    if (this.chartInstance) {
-      this.chartInstance.destroy();
-    }
-
-    const labels = trends.map(t => t.date);
-    const revenues = trends.map(t => t.revenue);
-    const profits = trends.map(t => t.profit);
-
-    this.chartInstance = new chart(canvas, {
+    if (this.chartInstance) this.chartInstance.destroy();
+    this.chartInstance = new Chart(canvas, {
       type: 'line',
       data: {
-        labels: labels,
+        labels: trends.map(t => t.date),
         datasets: [
-          {
-            label: 'Ingresos Brutos ($)',
-            data: revenues,
-            borderColor: '#3b82f6', // Azulito
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            fill: true,
-            tension: 0.4 // Curvas suaves
-          },
-          {
-            label: 'Ganancia Neta ($)',
-            data: profits,
-            borderColor: '#10b981', // Verdecito
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            fill: true,
-            tension: 0.4
-          }
+          { label: 'Ingresos Brutos ($)', data: trends.map(t => t.revenue), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.4 },
+          { label: 'Ganancia Neta ($)', data: trends.map(t => t.profit), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4 }
         ]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'top' },
-          tooltip: {
-            callbacks: {
-              label: (context) => `$${Number(context.raw).toLocaleString()}`
-            }
-          }
-        }
-      }
+      options: { responsive: true, maintainAspectRatio: false }
     });
   }
 }
