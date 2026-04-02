@@ -1,9 +1,6 @@
 import { Request, Response } from 'express';
 import { db } from '../config/firebase';
 
-// ==========================================
-// 1. DASHBOARD FINANCIERO 
-// ==========================================
 export const getDashboardKPIs = async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.query.tenantId as string;
@@ -30,11 +27,9 @@ export const getDashboardKPIs = async (req: Request, res: Response): Promise<voi
       const order = doc.data();
       const orderDate = new Date(order.createdAt);
       
-      // EXCLUIMOS ÓRDENES CANCELADAS
       if (orderDate >= startDate && orderDate <= endDate && order.status !== 'Cancelado') {
         const revenue = order.total || 0;
         const cogs = order.totalCost || 0;
-        
         totalRevenue += revenue; totalCOGS += cogs; totalOrders++;
 
         if (order.items) {
@@ -69,7 +64,6 @@ export const getDashboardKPIs = async (req: Request, res: Response): Promise<voi
     const topProducts = Object.entries(productSalesMap).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.qty - a.qty);
     expensesDetail.sort((a, b) => b.amount - a.amount);
     const dailyTrends = Object.entries(dailyDataMap).map(([date, data]) => ({ date, ...data })).sort((a, b) => a.date.localeCompare(b.date));
-
     const netProfit = totalRevenue - totalCOGS - totalExpenses;
     const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
     const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0';
@@ -78,19 +72,14 @@ export const getDashboardKPIs = async (req: Request, res: Response): Promise<voi
   } catch (error) { res.status(500).json({ error: 'Error KPIs' }); }
 };
 
-// ==========================================
-// 2. REPORTES DE VENTAS
-// ==========================================
 export const getSalesReport = async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.query.tenantId as string;
     const period = req.query.period as string || 'all';
-
     let query: any = db.collection('orders').where('tenantId', '==', tenantId);
     
     if (period !== 'all') {
-      const now = new Date();
-      let startDate = new Date();
+      const now = new Date(); let startDate = new Date();
       if (period === 'day') startDate.setHours(0, 0, 0, 0);
       else if (period === 'week') { startDate.setDate(now.getDate() - now.getDay()); startDate.setHours(0, 0, 0, 0); }
       else if (period === 'month') startDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -104,9 +93,6 @@ export const getSalesReport = async (req: Request, res: Response): Promise<void>
   } catch (error) { res.status(500).json({ error: 'Error reportes' }); }
 };
 
-// ==========================================
-// 3. INVENTARIO (Traer y Editar)
-// ==========================================
 export const getAdminProducts = async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.query.tenantId as string;
@@ -118,17 +104,32 @@ export const getAdminProducts = async (req: Request, res: Response): Promise<voi
 
 export const updateProduct = async (req: Request, res: Response): Promise<void> => {
   try {
-    // MAGIA DE TYPESCRIPT AQUÍ: Forzamos a que se lea como un string puro
     const id = req.params.id as string; 
-    const { price, cost, stock } = req.body;
-    await db.collection('products').doc(id).update({ price, cost, stock });
-    res.status(200).json({ message: 'Producto actualizado' });
+    const { price, cost, stock, recipe } = req.body;
+    await db.collection('products').doc(id).update({ price, cost, stock, recipe });
+    res.status(200).json({ message: 'Producto actualizado con receta' });
   } catch (error) { res.status(500).json({ error: 'Error actualizando producto' }); }
 };
 
-// ==========================================
-// 4. FINANZAS Y CAJA MENOR
-// ==========================================
+// --- NUEVO: CREAR PRODUCTO ---
+export const createProduct = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { tenantId, name, category, price } = req.body;
+    const newProduct = { tenantId, name, category, price, stock: 0, recipe: [], cost: 0, createdAt: new Date().toISOString() };
+    const docRef = await db.collection('products').add(newProduct);
+    res.status(201).json({ id: docRef.id, ...newProduct });
+  } catch (error) { res.status(500).json({ error: 'Error creando producto' }); }
+};
+
+// --- NUEVO: ELIMINAR PRODUCTO ---
+export const deleteProduct = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    await db.collection('products').doc(id).delete();
+    res.status(200).json({ message: 'Producto eliminado del menú' });
+  } catch (error) { res.status(500).json({ error: 'Error eliminando producto' }); }
+};
+
 export const getExpenses = async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.query.tenantId as string;
