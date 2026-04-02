@@ -3,3 +3,26 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* --- MAGIA DE IMPRESIÓN --- */
+@media print {
+  /* Ocultamos absolutamente toda la aplicación por defecto al imprimir */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Hacemos visible ÚNICAMENTE el contenedor que tenga el id "printableTicket" */
+  #printableTicket, #printableTicket * {
+    visibility: visible;
+  }
+  
+  /* Posicionamos el ticket en la esquina superior izquierda de la hoja PDF */
+  #printableTicket {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%; /* Ajusta al ancho del papel (ideal para formato térmico de 80mm si configuran la impresora así) */
+    margin: 0;
+    padding: 0;
+    box-shadow: none !important;
+  }
+}

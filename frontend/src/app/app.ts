@@ -62,6 +62,10 @@ export class App implements OnInit {
   filteredProducts = this.productService.filteredProducts;
   isModalOpen = signal(false);
   paymentMethod = signal('Efectivo'); 
+  isReceiptModalOpen = signal(false); // <-- NUEVO: Controla el modal del recibo
+  isReceiptLoading = signal(false);
+  lastOrderTicket = signal<any>(null); // <-- NUEVO: Guarda los datos de la última orden para mostrar en el recibo
+
 
   constructor() {
     effect(() => {
@@ -191,7 +195,58 @@ export class App implements OnInit {
   openCheckoutModal() { this.isModalOpen.set(true); }
   closeModal() { this.isModalOpen.set(false); this.paymentMethod.set('Efectivo'); }
   setPaymentMethod(method: string) { this.paymentMethod.set(method); }
-  confirmCheckout() { this.orderService.checkoutOrder('sociedad_selecta_001', this.paymentMethod()); this.closeModal(); }
+  confirmCheckout() {
+    const user = this.currentUser();
+    if (!user) return;
+
+    // 1. Cerramos modal de pago, abrimos el del recibo y activamos el Skeleton
+    this.closeModal(); 
+    this.isReceiptLoading.set(true);
+    this.isReceiptModalOpen.set(true);
+
+    // 2. Disparamos la petición a Firebase
+    this.orderService.checkoutOrder(user.tenantId || 'sociedad_selecta_001', this.paymentMethod())
+      .subscribe({
+        next: (response: any) => {
+          
+          // --- EL TRUCO NINJA DE UX ---
+          // Retrasamos la vista final 1.2 segundos para que la animación de carga se alcance a ver bien
+          setTimeout(() => {
+            const ticketData = {
+              orderNumber: response.orderNumber, // <-- El número oficial de la BD
+              date: new Date(),
+              items: [...this.cart()],
+              subtotal: this.subtotal(),
+              total: this.total(),
+              paymentMethod: this.paymentMethod()
+            };
+            
+            this.lastOrderTicket.set(ticketData);
+            this.isReceiptLoading.set(false); // Apagamos el Skeleton
+            this.orderService.clearCart(); // Limpiamos el carrito
+          }, 1200); 
+
+        },
+        error: (err) => {
+          console.error('Error al facturar:', err);
+          alert('Mano, hubo un error con Firebase. Revisa el internet.');
+          this.isReceiptModalOpen.set(false);
+          this.isReceiptLoading.set(false);
+        }
+      });
+  }
+
+  // --- NUEVAS FUNCIONES PARA EL TICKET ---
+  printTicket() {
+    window.print(); // Llama a la ventana nativa de impresión/PDF del navegador
+  }
+
+  closeReceipt() {
+    this.isReceiptModalOpen.set(false);
+    this.lastOrderTicket.set(null);
+    // Como ya cobró y cerró el recibo, nos aseguramos de que el carrito esté vacío
+    this.orderService.clearCart(); 
+  }
 
   // --- FUNCIÓN DE GRÁFICAS ---
   renderChart(trends: any[]) {
