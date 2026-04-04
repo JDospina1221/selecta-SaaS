@@ -123,11 +123,26 @@ export const getAdminProducts = async (req: Request, res: Response): Promise<voi
 
 export const updateProduct = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = req.params.id as string; 
-    const { price, cost, stock, recipe } = req.body;
-    await db.collection('products').doc(id).update({ price, cost, stock, recipe });
-    res.status(200).json({ message: 'Producto actualizado con receta' });
-  } catch (error) { res.status(500).json({ error: 'Error actualizando producto' }); }
+    const id = req.params.id as string;
+    const payload = req.body;
+
+    if (!id) {
+      res.status(400).json({ error: 'Falta el ID del producto' });
+      return;
+    }
+
+    // Actualizamos el producto en Firebase
+    await db.collection('products').doc(id).update({
+      ...payload,
+      updatedAt: new Date().toISOString()
+    });
+
+    res.status(200).json({ success: true, message: 'Producto actualizado melo' });
+  } catch (error) {
+    // 🔥 AHORA SÍ: Este chismoso nos va a gritar si Firebase rechaza la receta
+    console.error('🔥 ERROR EN ADMIN CONTROLLER ACTUALIZANDO PRODUCTO:', error);
+    res.status(500).json({ error: 'Paila, error actualizando el producto desde admin' });
+  }
 };
 
 // --- NUEVO: CREAR PRODUCTO ---

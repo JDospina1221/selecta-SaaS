@@ -1,6 +1,6 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Product } from '../models/product.models';
+import { Product } from '../shared/interfaces/product.models';
 
 export interface CartItem { product: Product; quantity: number; }
 

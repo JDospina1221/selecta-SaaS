@@ -1,0 +1,26 @@
+<div class="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
+  <div class="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-slate-200 w-full max-w-md text-center">
+    <h1 class="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-8">Selecta<span class="text-indigo-600">POS</span></h1>
+    <div class="flex flex-col gap-4 text-left">
+      <div>
+        <label class="block text-slate-600 font-medium mb-1 text-sm">Correo Electrónico</label>
+        <input type="email" [value]="loginEmail()" (input)="updateLoginEmail($event)" placeholder="usuario@selecta.com" class="w-full bg-white border border-slate-300 text-slate-900 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+      </div>
+      <div>
+        <label class="block text-slate-600 font-medium mb-1 text-sm">PIN de Acceso</label>
+        <input type="password" [value]="loginPin()" (input)="updateLoginPin($event)" placeholder="••••" class="w-full bg-white border border-slate-300 text-slate-900 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" (keyup.enter)="onLogin()">
+      </div>
+      @if (loginError()) { 
+        <div class="bg-red-50 border border-red-100 text-red-600 p-3 rounded-lg text-sm font-medium flex items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> 
+          Credenciales incorrectas.
+        </div> 
+      }
+      <button (click)="onLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg shadow-sm mt-2 transition-colors">Entrar al Sistema</button>
+    </div>
+    <div class="mt-6 pt-6 border-t border-slate-100 text-center text-xs text-slate-500 font-medium">
+      <p>caja1@selecta.com / 1234</p>
+      <p>admin@selecta.com / 0000</p>
+    </div>
+  </div>
+</div>
