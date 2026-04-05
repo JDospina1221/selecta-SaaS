@@ -1,28 +1,16 @@
-// Tailwind CSS configuration
-// This is a placeholder for Tailwind styles
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* --- MAGIA DE IMPRESIÓN --- */
-@media print {
-  /* Ocultamos absolutamente toda la aplicación por defecto al imprimir */
-  body * {
-    visibility: hidden;
-  }
-  
-  /* Hacemos visible ÚNICAMENTE el contenedor que tenga el id "printableTicket" */
-  #printableTicket, #printableTicket * {
-    visibility: visible;
-  }
-  
-  /* Posicionamos el ticket en la esquina superior izquierda de la hoja PDF */
-  #printableTicket {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%; /* Ajusta al ancho del papel (ideal para formato térmico de 80mm si configuran la impresora así) */
-    margin: 0;
-    padding: 0;
-    box-shadow: none !important;
-  }
+
+:root {
+  --primary-color: #6366f1; // Morado por defecto
+  --secondary-color: #4f46e5;
+  --primary-hover: #4338ca;
 }
+
+/* Sobreescribimos las clases de utilidad para que sigan las variables */
+.bg-indigo-600 { background-color: var(--primary-color) !important; }
+.hover\:bg-indigo-700:hover { background-color: var(--primary-hover) !important; }
+.text-indigo-600 { color: var(--primary-color) !important; }
+.border-indigo-600 { border-color: var(--primary-color) !important; }
+.bg-indigo-50 { background-color: color-mix(in srgb, var(--primary-color), white 90%) !important; }

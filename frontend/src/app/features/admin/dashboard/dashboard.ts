@@ -13,24 +13,39 @@ export class DashboardComponent implements OnInit {
   dashStartDate = signal(''); dashEndDate = signal('');
   chartInstance: any = null;
 
-  constructor() {
+ constructor() {
     effect(() => {
       const user = this.authService.currentUser();
-      // PARCHE: Si se pierde la sesión por recargar, forzamos la carga de la sucursal igual
-      if (!this.adminKpis()) {
-        this.adminService.loadKPIs(user?.tenantId || 'sociedad_selecta_001');
+      
+      // ✅ ELIMINAMOS EL PARCHE: Solo cargamos si hay un usuario y un tenantId real
+      if (user?.tenantId && !this.adminKpis()) {
+        this.adminService.loadKPIs(user.tenantId);
       }
+
       const kpis = this.adminKpis();
-      if (kpis && kpis.dailyTrends) { setTimeout(() => this.renderChart(kpis.dailyTrends || []), 0); }
+      if (kpis && kpis.dailyTrends) { 
+        setTimeout(() => this.renderChart(kpis.dailyTrends || []), 0); 
+      }
     });
   }
 
   ngOnInit() {}
 
   updateDashStart(e: any) { this.dashStartDate.set(e.target.value); } updateDashEnd(e: any) { this.dashEndDate.set(e.target.value); }
-  applyDashboardFilter() { const user = this.authService.currentUser(); this.adminService.loadKPIs(user?.tenantId || 'sociedad_selecta_001', this.dashStartDate(), this.dashEndDate()); }
-  clearDashboardFilter() { this.dashStartDate.set(''); this.dashEndDate.set(''); const user = this.authService.currentUser(); this.adminService.loadKPIs(user?.tenantId || 'sociedad_selecta_001'); }
-
+  applyDashboardFilter() { 
+    const tenantId = this.authService.currentUser()?.tenantId;
+      if (tenantId) {
+        this.adminService.loadKPIs(tenantId, this.dashStartDate(), this.dashEndDate()); 
+    }
+  }
+  clearDashboardFilter() { 
+    this.dashStartDate.set(''); 
+    this.dashEndDate.set(''); 
+    const tenantId = this.authService.currentUser()?.tenantId;
+    if (tenantId) {
+      this.adminService.loadKPIs(tenantId); 
+    }
+  }
   renderChart(trends: any[]) {
     const canvas = document.getElementById('trendChart') as HTMLCanvasElement;
     if (!canvas) return;

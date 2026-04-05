@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router'; 
 import { AuthService } from '../../services/auth.service';
+import { FeatureFlagService } from '../../services/feature-flag.service';
 
 @Component({ 
   selector: 'app-admin-layout', 
@@ -10,7 +11,8 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './admin-layout.html' 
 })
 export class AdminLayoutComponent {
-  private authService = inject(AuthService);
+  public authService = inject(AuthService);
+  public featureService = inject(FeatureFlagService);
   private router = inject(Router);
 
   isSidebarOpen = signal(false);

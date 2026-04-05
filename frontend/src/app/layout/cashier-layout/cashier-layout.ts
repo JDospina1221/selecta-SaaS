@@ -8,6 +8,7 @@ import { AuthService } from '../../services/auth.service';
 // Importamos los modales compartidos
 import { CheckoutModalComponent } from '../../shared/components/checkout-modal.component';
 import { ReceiptModalComponent } from '../../shared/components/receipt-modal.component';
+import { FeatureFlagService } from '../../services/feature-flag.service';
 
 @Component({ 
   selector: 'app-cashier-layout', 
@@ -18,7 +19,8 @@ import { ReceiptModalComponent } from '../../shared/components/receipt-modal.com
 export class CashierLayoutComponent implements OnInit {
   private productService = inject(ProductService); 
   private orderService = inject(OrderService); 
-  private authService = inject(AuthService); 
+  public authService = inject(AuthService); 
+  public featureService = inject(FeatureFlagService);
   private router = inject(Router);
   
   currentUser = this.authService.currentUser;

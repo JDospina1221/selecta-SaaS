@@ -1,79 +1,49 @@
-<div class="h-screen w-full bg-slate-50 flex flex-col font-sans text-slate-800 overflow-hidden">
-  <header class="flex-shrink-0 bg-white border-b border-slate-200 px-4 md:px-6 py-3 flex justify-between items-center shadow-sm z-10">
-    <div class="flex items-center gap-4 md:gap-8">
-      <div class="flex items-center gap-2"><div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">S</div><h1 class="text-lg md:text-xl font-bold tracking-tight text-slate-900 hidden sm:block">SelectaPOS</h1></div>
-      
-      <div class="flex bg-slate-50 rounded-lg p-1 border border-slate-200 overflow-x-auto max-w-[50vw] md:max-w-none">
-        <a routerLink="/caja/pos" routerLinkActive="bg-white shadow-sm text-indigo-600" class="px-3 md:px-4 py-1.5 rounded-md text-xs md:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap text-slate-500 hover:text-slate-700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg> <span class="hidden md:inline">Tomar Pedido</span><span class="md:hidden">POS</span></a>
-        <a routerLink="/caja/orders" routerLinkActive="bg-white shadow-sm text-indigo-600" class="px-3 md:px-4 py-1.5 rounded-md text-xs md:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap text-slate-500 hover:text-slate-700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Gestión</a>
-        <a routerLink="/caja/inventory" routerLinkActive="bg-white shadow-sm text-indigo-600" class="px-3 md:px-4 py-1.5 rounded-md text-xs md:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap text-slate-500 hover:text-slate-700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> Bodega</a>
+<nav class="bg-white border-b border-slate-200 sticky top-0 z-30">
+  <div class="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
+    <div class="flex items-center gap-8">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
+          <i class="fas fa-store text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-slate-900 leading-tight">
+            {{ authService.tenantConfig()?.businessInfo?.name || 'Servex' }}
+          </h1>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Terminal de Ventas</p>
+        </div>
+      </div>
+
+      <div class="flex items-center bg-slate-100 p-1 rounded-xl">
+        <a routerLink="/pos/tomar-pedido" routerLinkActive="bg-white text-indigo-600 shadow-sm"
+          class="px-6 py-2 rounded-lg text-sm font-semibold text-slate-600 transition-all flex items-center gap-2">
+          <i class="fas fa-plus-circle"></i> Nuevo Pedido
+        </a>
+        <a routerLink="/pos/ordenes" routerLinkActive="bg-white text-indigo-600 shadow-sm"
+          class="px-6 py-2 rounded-lg text-sm font-semibold text-slate-600 transition-all flex items-center gap-2">
+          <i class="fas fa-list-ul"></i> Gestión de Órdenes
+        </a>
+        <a routerLink="/pos/inventario" routerLinkActive="bg-white text-indigo-600 shadow-sm"
+          class="px-6 py-2 rounded-lg text-sm font-semibold text-slate-600 transition-all flex items-center gap-2">
+          <i class="fas fa-boxes"></i> Inventario
+        </a>
       </div>
     </div>
-    
-    <div class="flex items-center gap-3 shrink-0">
-      @if (cashierView() === 'POS') {
-        <button (click)="toggleCart()" class="lg:hidden relative bg-indigo-50 text-indigo-600 p-2 rounded-lg border border-indigo-100 flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-          @if (cart().length > 0) { <span class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">{{ cart().length }}</span> }
-        </button>
-      }
-      <div class="hidden sm:flex items-center gap-2 pr-4 border-r border-slate-200">
-        <span class="text-sm font-medium text-slate-700 truncate max-w-[100px]">{{ currentUser()?.name }}</span>
-        <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+
+    <div class="flex items-center gap-4">
+      <div class="text-right hidden sm:block">
+        <p class="text-sm font-bold text-slate-900">{{ authService.currentUser()?.name }}</p>
+        <p class="text-xs text-slate-500">{{ authService.currentUser()?.role }}</p>
       </div>
-      <button (click)="onLogout()" class="text-slate-500 hover:text-indigo-600 text-xs md:text-sm font-medium flex items-center gap-1.5 transition-colors"><span class="hidden sm:inline">Cerrar Sesión</span> <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></button>
+      <div class="h-10 w-[1px] bg-slate-200 mx-2"></div>
+      <button (click)="authService.logout()" 
+        class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors flex items-center justify-center"
+        title="Cerrar Sesión">
+        <i class="fas fa-sign-out-alt"></i>
+      </button>
     </div>
-  </header>
-
-  <div class="flex-1 flex overflow-hidden relative">
-  <main class="flex-1 p-4 md:p-6 overflow-y-auto">
-      <router-outlet></router-outlet>
-    </main>
-
-    @if (cashierView() === 'POS') {
-      @if (isCartOpen()) { <div class="fixed inset-0 bg-slate-900/60 z-40 lg:hidden backdrop-blur-sm" (click)="toggleCart()"></div> }
-      <aside [class]="isCartOpen() ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'" class="w-[85vw] max-w-sm flex-shrink-0 bg-white border-l border-slate-200 flex flex-col shadow-2xl lg:shadow-sm z-50 h-[calc(100vh-64px)] lg:h-auto fixed lg:relative top-[64px] lg:top-0 right-0 transition-transform duration-300">
-        <div class="p-5 border-b border-slate-100 flex justify-between items-center">
-          <div class="flex items-center gap-3">
-            <button (click)="toggleCart()" class="lg:hidden text-slate-400 hover:text-slate-600 bg-slate-50 p-1.5 rounded-lg"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-            <h2 class="text-lg font-bold text-slate-800">Orden Actual</h2>
-          </div>
-          @if (cart().length > 0) { <button (click)="onClearOrder()" class="text-red-500 hover:bg-red-50 px-2 py-1 rounded text-xs font-medium transition-colors">Vaciar</button> }
-        </div>
-        <div class="flex-1 p-5 overflow-y-auto bg-slate-50 flex flex-col gap-3">
-          @for (item of cart(); track item.product.id) {
-            <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-100 relative group">
-              <div class="flex justify-between items-start mb-3 pr-5"><p class="font-medium text-slate-800 text-sm leading-tight">{{ item.product.name }}</p><div class="font-bold text-slate-900">${{ (item.product.price * item.quantity) | number }}</div></div>
-              <div class="flex items-center bg-slate-50 rounded border border-slate-200 w-fit p-0.5"><button (click)="onUpdateQuantity(item.product.id, -1)" class="w-7 h-7 bg-white rounded shadow-sm text-slate-600 hover:text-indigo-600 text-sm font-medium flex items-center justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg></button><span class="w-8 text-center text-sm font-bold text-slate-700">{{ item.quantity }}</span><button (click)="onUpdateQuantity(item.product.id, 1)" class="w-7 h-7 bg-white rounded shadow-sm text-slate-600 hover:text-indigo-600 text-sm font-medium flex items-center justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button></div>
-              <button (click)="onRemoveItem(item.product.id)" class="absolute top-2 right-2 text-slate-400 hover:text-red-500 transition-colors p-1 lg:opacity-0 lg:group-hover:opacity-100 text-xs"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-            </div>
-          } @empty {
-            <div class="flex flex-col items-center justify-center h-full text-slate-400 opacity-50">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-              <p class="text-sm font-medium">El carrito está vacío</p>
-            </div>
-          }
-        </div>
-        <div class="p-5 border-t border-slate-200 bg-white">
-           <div class="flex justify-between text-sm mb-1 text-slate-500"><span>Subtotal:</span><span class="font-medium">${{ subtotal() | number }}</span></div>
-           <div class="flex justify-between font-bold text-xl mb-4 text-slate-900"><span>Total:</span><span>${{ total() | number }}</span></div>
-           <button (click)="openCheckoutModal()" [disabled]="cart().length === 0" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg shadow-sm text-base disabled:opacity-50 disabled:shadow-none transition-all">Cobrar Orden</button>
-        </div>
-      </aside>
-    }
   </div>
-</div>
+</nav>
 
-<app-checkout-modal 
-  [isOpen]="isModalOpen()" 
-  [total]="total()" 
-  (closeEvent)="closeModal()" 
-  (confirmEvent)="confirmCheckout($event)">
-</app-checkout-modal>
-
-<app-receipt-modal 
-  [isOpen]="isReceiptModalOpen()" 
-  [isLoading]="isReceiptLoading()" 
-  [ticket]="lastOrderTicket()" 
-  (closeEvent)="closeReceipt()">
-</app-receipt-modal>
+<main class="max-w-[1600px] mx-auto p-6">
+  <router-outlet></router-outlet>
+</main>
