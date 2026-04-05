@@ -1,29 +1,31 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from '../../services/auth.service'; 
+import { AuthService } from '../../services/auth.service';
 
 export const roleGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
+  
   const user = authService.currentUser();
-
-  // Leemos qué rol exige la ruta a la que intenta entrar
-  const expectedRole = route.data?.['expectedRole'];
-
+  const expectedRole = route.data['expectedRole'];
+  
+  // 1. Si el rol coincide, siga derecho sin problema
   if (user && user.role === expectedRole) {
-    return true; // Tiene el rol correcto, pase.
+    return true; 
   }
 
-  // Si no tiene el rol (ej. un Cajero queriendo entrar al Admin), lo redirigimos a su área
-  /*
+  // 2. Si intentó meterse donde no era, ¡Paila! Le sacamos la tarjeta roja
+  alert('🚫 Permiso denegado: No tienes autorización para entrar a esta zona, manin.');
+
+  // 3. Lo devolvemos a SU casa dependiendo de su rol real
   if (user?.role === 'CAJERO') {
-    router.navigate(['/caja']);
+    router.navigate(['/caja/pos']); 
+  } else if (user?.role === 'ADMIN') {
+    router.navigate(['/admin/dashboard']); 
   } else {
-    router.navigate(['/login']);
+    // Solo si de verdad hay un error raro y no tiene rol, lo mandamos al login
+    router.navigate(['/login']); 
   }
-  return false;
-  */
-
-  // Temporalmente true en Fase 1
-  return true; 
+  
+  return false; 
 };

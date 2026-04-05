@@ -182,3 +182,163 @@ export const addExpense = async (req: Request, res: Response): Promise<void> => 
     res.status(201).json({ message: 'Gasto registrado' });
   } catch (error) { res.status(500).json({ error: 'Error guardando gasto' }); }
 };
+// CREAR CAJERO 
+// --- NUEVO: CREAR CAJERO (IAM) ---
+export const createCashier = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { tenantId, name, email, pin } = req.body;
+
+    if (!tenantId || !email || !pin || !name) {
+      res.status(400).json({ error: 'Faltan datos exactos para crear el cajero' });
+      return;
+    }
+
+    // 1. VALIDACIONES ESTRICTAS (Regex en el Backend)
+    const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    const pinRegex = /^\d{4,6}$/;
+    
+    if (!nameRegex.test(name)) {
+      res.status(400).json({ error: 'El nombre contiene caracteres inválidos' });
+      return;
+    }
+    if (!pinRegex.test(pin)) {
+      res.status(400).json({ error: 'El PIN debe ser estrictamente de 4 a 6 números' });
+      return;
+    }
+
+    // 2. BLINDAJE DE DOMINIO: Asegurar que el dominio del empleado sea igual al del Administrador
+    // Primero, traemos al administrador dueño de este tenant
+    const adminSnapshot = await db.collection('users').where('tenantId', '==', tenantId).where('role', '==', 'ADMIN').limit(1).get();
+    
+    if (adminSnapshot.empty) {
+      res.status(403).json({ error: 'Tenant inválido o sin administrador' });
+      return;
+    }
+
+    const adminEmail = adminSnapshot.docs[0].data().email;
+    const adminDomain = adminEmail.split('@')[1]; // saca "selecta.com"
+    const newCashierDomain = email.split('@')[1]; // saca lo que enviaron
+
+    if (adminDomain !== newCashierDomain) {
+      res.status(403).json({ error: `Paila manin, solo puedes crear usuarios con el dominio @${adminDomain}` });
+      return;
+    }
+
+    // 3. Validación de unicidad
+    const existingUser = await db.collection('users').where('email', '==', email).get();
+    if (!existingUser.empty) {
+      res.status(400).json({ error: 'Paila, este usuario ya existe en el sistema' });
+      return;
+    }
+
+    const newCashier = {
+      tenantId,
+      name: name.trim(),
+      email,
+      pin, 
+      role: 'CAJERO',
+      createdAt: new Date().toISOString(),
+      status: true // Por defecto, el cajero nuevo está activo. Se puede desactivar desde el frontend si es necesario.
+    };
+
+    const docRef = await db.collection('users').add(newCashier);
+    res.status(201).json({ id: docRef.id, ...newCashier });
+  } catch (error) {
+    console.error('Error en adminController creando cajero:', error);
+    res.status(500).json({ error: 'Error interno del servidor al crear el personal' });
+  }
+};
+
+// OBTENER CAJEROS
+export const getCashiers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.query.tenantId as string;
+
+    if (!tenantId) {
+      res.status(400).json({ error: 'Falta el tenantId en la consulta' });
+      return;
+    }
+
+    // Filtramos estrictamente por el restaurante del Admin y solo usuarios tipo CAJERO
+    const snapshot = await db.collection('users')
+      .where('tenantId', '==', tenantId)
+      .where('role', '==', 'CAJERO')
+      .get();
+
+    const cashiers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Ordenamos alfabéticamente por nombre para mejor UX en el frontend
+    cashiers.sort((a: any, b: any) => a.name.localeCompare(b.name));
+    
+    res.status(200).json(cashiers);
+  } catch (error) {
+    console.error('Error en adminController obteniendo cajeros:', error);
+    res.status(500).json({ error: 'Error al listar el personal' });
+  }
+};
+
+// ACTUALIZAR CAJERO
+export const updateCashier = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const payload = req.body;
+
+    if (!id) {
+      res.status(400).json({ error: 'Falta el ID del cajero' });
+      return;
+    }
+
+    // --- REGLAS DE VALIDACIÓN ESTRICTA (Regex) ---
+    const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    const pinRegex = /^\d{4,6}$/;
+
+    // Si mandan el nombre, validamos que no tenga números ni símbolos extraños
+    if (payload.name) {
+      if (!nameRegex.test(payload.name)) {
+        res.status(400).json({ error: 'Paila, el nombre solo debe contener letras.' });
+        return;
+      }
+      payload.name = payload.name.trim(); // Limpiamos espacios al inicio y al final
+    }
+
+    // Si mandan el PIN, validamos que sea estricto de 4 a 6 números
+    if (payload.pin) {
+      if (!pinRegex.test(payload.pin)) {
+        res.status(400).json({ error: 'Paila, el PIN debe ser estrictamente numérico, entre 4 y 6 dígitos.' });
+        return;
+      }
+    }
+    // Evitamos que desde el frontend (o Postman) inyecten datos que no se pueden alterar
+    delete payload.role; 
+    delete payload.tenantId;
+    delete payload.email; 
+
+    await db.collection('users').doc(id).update({
+      ...payload,
+      updatedAt: new Date().toISOString()
+    });
+
+    res.status(200).json({ success: true, message: 'Datos del cajero actualizados melo' });
+  } catch (error) {
+    console.error('Error en adminController actualizando cajero:', error);
+    res.status(500).json({ error: 'Paila, error al actualizar los datos del empleado' });
+  }
+};
+
+// ELIMINAR CAJERO
+export const deleteCashier = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    
+    if (!id) {
+      res.status(400).json({ error: 'Falta el ID del cajero' });
+      return;
+    }
+
+    await db.collection('users').doc(id).delete();
+    res.status(200).json({ message: 'Cajero eliminado del sistema correctamente' });
+  } catch (error) {
+    console.error('Error en adminController eliminando cajero:', error);
+    res.status(500).json({ error: 'Error al intentar eliminar el cajero' });
+  }
+};

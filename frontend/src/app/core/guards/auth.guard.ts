@@ -6,14 +6,12 @@ export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
   
-  // Verificamos si el usuario está logueado leyendo el Signal de tu AuthService
+  // 1. ¿Hay alguien logeado?
   if (authService.currentUser()) {
-    return true;
+    return true; // Siga, pase al siguiente filtro
   }
   
-  // Si no está logueado, lo pateamos al login (lo descomentamos en la Fase 2)
-  // router.navigate(['/login']); 
-  
-  // Por ahora retornamos true para no romper tu vista monolítica actual
-  return true; 
+  // Si no está logeado, lo mandamos a volar al login
+  router.navigate(['/login']); 
+  return false; 
 };

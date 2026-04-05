@@ -46,9 +46,13 @@
                 </label><input type="text" [value]="cancelReason()" (input)="updateCancelReason($event)" placeholder="Ej. Cliente arrepentido..." class="w-full bg-white border border-slate-30₀ text-slate-7₀ rounded-lg p-₂.₅ text-sm outline-none focus:ring-₂ focus:ring-indigo-5₀₀">
             </div>
         </div>
-        <div class="p-4 border-t border-slate-₁₀₀ bg-slate-5₀ flex gap-3">
-            <button (click)="closeCancelModal()" class="flex-₁ bg-white border border-slate-3₀₀ text-slate-6₀₀ font-medium py-₂.5 rounded-lg hover:bg-slate-5₀ transition-colors text-sm">Atrás</button>
-            <button (click)="confirmCancelOrder()" class="flex-₁ bg-red-6₀₀ hover:bg-red-7₀₀ text-white font-medium py-₂.5 rounded-lg shadow-sm transition-colors text-sm">Confirmar Anulación</button>
-        </div>
+        <div class="p-4 border-t border-slate-100 bg-white flex gap-3">
+        <button (click)="closeCancelModal()" class="flex-1 bg-white border border-slate-300 text-slate-600 font-medium py-2.5 rounded-lg hover:bg-slate-50 transition-colors text-sm">
+          Atrás
+        </button>
+        <button (click)="confirmCancelOrder()" class="flex-1 bg-red-600 text-white font-medium py-2.5 rounded-lg shadow-sm hover:opacity-80 transition-opacity text-sm">
+          Confirmar Anulación
+        </button>
+      </div>
     </div>
 </div> }

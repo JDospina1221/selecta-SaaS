@@ -1,0 +1,52 @@
+@if (isOpen) {
+  <div class="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+      
+      <h2 class="text-xl font-bold mb-4 text-slate-800">
+        {{ cashierToEdit ? 'Editar Empleado' : 'Nuevo Cajero' }}
+      </h2>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Nombre Completo</label>
+          <input type="text" [ngModel]="name()" (ngModelChange)="name.set($event)"
+            class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            placeholder="Ej. Juan Pérez" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Usuario de Acceso</label>
+          <div class="flex rounded-lg shadow-sm">
+            <input type="text" [ngModel]="username()" (ngModelChange)="username.set($event)"
+              [disabled]="cashierToEdit !== null" 
+              class="flex-1 min-w-0 block w-full px-4 py-2 rounded-none rounded-l-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-slate-100 disabled:text-slate-500"
+              placeholder="caja1" />
+            <span class="inline-flex items-center px-3 rounded-r-lg border border-l-0 border-slate-300 bg-slate-50 text-slate-500 text-sm">
+              {{ adminDomain() }}
+            </span>
+          </div>
+          @if (cashierToEdit) {
+            <p class="text-xs text-slate-500 mt-1">El alias de acceso no se puede modificar.</p>
+          }
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">PIN de Acceso (4 a 6 dígitos)</label>
+          <input type="password" [ngModel]="pin()" (ngModelChange)="pin.set($event)"
+            class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            placeholder="****" maxlength="6" />
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-3">
+        <button (click)="onClose()" class="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors font-medium">
+          Cancelar
+        </button>
+        <button (click)="onSave()" class="px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors font-medium">
+          {{ cashierToEdit ? 'Actualizar' : 'Guardar' }}
+        </button>
+      </div>
+      
+    </div>
+  </div>
+}

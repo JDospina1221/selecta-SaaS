@@ -1,0 +1,83 @@
+<div class="p-6 max-w-6xl mx-auto">
+  
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Personal (Cajeros)</h1>
+      <p class="text-sm text-slate-500 mt-1">Gestiona los accesos y credenciales de tus empleados.</p>
+    </div>
+    <button (click)="openModal()" 
+      class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+      </svg>
+      Nuevo Cajero
+    </button>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm">
+            <th class="py-3 px-6 font-semibold">Nombre</th>
+            <th class="py-3 px-6 font-semibold">Correo de Acceso</th>
+            <th class="py-3 px-6 font-semibold">PIN</th>
+            <th class="py-3 px-6 font-semibold">Estado</th>
+            <th class="py-3 px-6 font-semibold text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          
+         @for (cashier of cashiers(); track cashier.id) {
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="py-4 px-6 text-slate-800 font-medium">{{ cashier.name }}</td>
+              <td class="py-4 px-6 text-slate-600">{{ cashier.email }}</td>
+              <td class="py-4 px-6 text-slate-500 font-mono">****</td>
+              
+              <td class="py-4 px-6">
+                <div class="flex items-center gap-3">
+                  <button type="button" (click)="toggleStatus(cashier)"
+                    [ngClass]="cashier.status !== false ? 'bg-emerald-500' : 'bg-slate-300'"
+                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    <span
+                      [ngClass]="cashier.status !== false ? 'translate-x-5' : 'translate-x-0'"
+                      class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out">
+                    </span>
+                  </button>
+                  <span class="text-sm font-medium" 
+                    [ngClass]="cashier.status !== false ? 'text-emerald-700' : 'text-slate-500'">
+                    {{ cashier.status !== false ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </div>
+              </td>
+
+              <td class="py-4 px-6 text-right">
+                <button (click)="openModal(cashier)" class="text-indigo-600 hover:text-indigo-900 font-medium mr-4">
+                  Editar
+                </button>
+                <button (click)="deleteCashier(cashier.id, cashier.name)" class="text-red-600 hover:text-red-900 font-medium">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="py-8 text-center text-slate-500">
+                Aún no tienes cajeros registrados en este local.
+              </td>
+            </tr>
+          }
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<app-cashier-modal 
+  [isOpen]="isModalOpen()" 
+  [cashierToEdit]="selectedCashier()" 
+  (close)="closeModal()" 
+  (save)="onSaveCashier($event)">
+</app-cashier-modal>

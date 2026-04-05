@@ -7,7 +7,7 @@ import { AuthService } from '../../../services/auth.service';
 // 2. Ruta del template corregida a 'login.html'
 @Component({ selector: 'app-login', standalone: true, imports: [CommonModule], templateUrl: './login.html' })
 export class LoginComponent {
-  private authService = inject(AuthService);
+  public authService = inject(AuthService);
   private router = inject(Router);
 
   loginEmail = signal(''); loginPin = signal(''); loginError = this.authService.loginError;

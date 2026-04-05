@@ -10,11 +10,13 @@
         <label class="block text-slate-600 font-medium mb-1 text-sm">PIN de Acceso</label>
         <input type="password" [value]="loginPin()" (input)="updateLoginPin($event)" placeholder="••••" class="w-full bg-white border border-slate-300 text-slate-900 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" (keyup.enter)="onLogin()">
       </div>
-      @if (loginError()) { 
-        <div class="bg-red-50 border border-red-100 text-red-600 p-3 rounded-lg text-sm font-medium flex items-center gap-2">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> 
-          Credenciales incorrectas.
-        </div> 
+      @if (authService.loginError()) {
+        <div class="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm mb-4 border border-red-100 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span>{{ authService.loginError() }}</span>
+        </div>
       }
       <button (click)="onLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg shadow-sm mt-2 transition-colors">Entrar al Sistema</button>
     </div>

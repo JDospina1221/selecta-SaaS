@@ -6,7 +6,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const { email, pin } = req.body;
 
     if (!email || !pin) {
-      res.status(400).json({ error: 'Papi, mande el correo y el pin' });
+      res.status(400).json({ error: 'Mande el correo y el pin' });
       return;
     }
 
@@ -22,6 +22,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     // Si lo encontró, sacamos sus datos
     const userData = snapshot.docs[0].data();
     
+    if (userData.status === false) {
+      res.status(403).json({ error: 'Usuario desactivado. Comuníquese con la gerencia.' });
+      return;
+    }
+
     res.status(200).json({
       message: '¡Bienvenido a Sociedad Selecta!',
       user: {
