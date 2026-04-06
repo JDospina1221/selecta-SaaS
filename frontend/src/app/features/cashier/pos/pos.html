@@ -1,14 +1,32 @@
-<div class="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
-  @for (cat of categories; track cat) { 
-    <button (click)="onSelectCategory(cat)" [class]="selectedCategory() === cat ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-indigo-600'" class="px-4 py-2 rounded-full font-medium text-xs md:text-sm transition-all whitespace-nowrap">{{ cat }}</button> 
+<!-- ░░ CATEGORÍAS — scroll horizontal en móvil ░░ -->
+<div class="flex gap-2 mb-4 md:mb-6 overflow-x-auto pb-2 scrollbar-hide -mx-3 md:mx-0 px-3 md:px-0">
+  @for (cat of categories; track cat) {
+    <button
+      (click)="onSelectCategory(cat)"
+      [class]="selectedCategory() === cat
+        ? 'bg-indigo-600 text-white shadow-sm'
+        : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-indigo-600'"
+      class="px-4 py-2 rounded-full font-medium text-xs md:text-sm transition-all whitespace-nowrap shrink-0">
+      {{ cat }}
+    </button>
   }
 </div>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-20 lg:pb-0">
+<!-- ░░ GRILLA DE PRODUCTOS
+     - Móvil:   2 columnas
+     - Tablet:  3 columnas
+     - Laptop:  4 columnas
+     - Desktop: 5 columnas
+░░ -->
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 pb-24 lg:pb-4">
   @for (product of filteredProducts(); track product.id) {
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:border-indigo-300 hover:shadow transition-all flex flex-col h-full group" (click)="onProductClick(product)">
-      <h3 class="font-medium text-slate-800 leading-tight mb-2 flex-1 group-hover:text-indigo-600 transition-colors text-sm md:text-base">{{ product.name }}</h3>
-      <p class="text-slate-900 font-bold text-lg">${{ product.price | number }}</p>
+    <div
+      class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:border-indigo-300 hover:shadow transition-all flex flex-col h-full group"
+      (click)="onProductClick(product)">
+      <h3 class="font-medium text-slate-800 leading-tight mb-2 flex-1 group-hover:text-indigo-600 transition-colors text-xs md:text-sm lg:text-base">
+        {{ product.name }}
+      </h3>
+      <p class="text-slate-900 font-bold text-base md:text-lg">${{ product.price | number }}</p>
     </div>
   }
 </div>

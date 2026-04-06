@@ -1,32 +1,140 @@
-<div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-  <div><h3 class="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">Rendimiento</h3><p class="text-xs md:text-sm text-slate-500 mt-1">Excluye devoluciones. Basado en costo dinámico de recetas.</p></div>
-  <div class="flex items-center gap-2 bg-white border border-slate-200 p-1.5 rounded-xl shadow-sm overflow-x-auto w-full md:w-auto">
-    <div class="flex items-center gap-1 md:gap-2 px-2 shrink-0"><span class="text-[10px] md:text-xs font-bold text-slate-400 uppercase">Desde:</span><input type="date" [value]="dashStartDate()" (change)="updateDashStart($event)" class="bg-transparent text-slate-700 text-xs md:text-sm font-semibold outline-none cursor-pointer"></div>
-    <div class="w-px h-6 bg-slate-200 shrink-0"></div>
-    <div class="flex items-center gap-1 md:gap-2 px-2 shrink-0"><span class="text-[10px] md:text-xs font-bold text-slate-400 uppercase">Hasta:</span><input type="date" [value]="dashEndDate()" (change)="updateDashEnd($event)" class="bg-transparent text-slate-700 text-xs md:text-sm font-semibold outline-none cursor-pointer"></div>
-    <div class="flex items-center gap-1 pl-2 border-l border-slate-200 shrink-0"><button (click)="clearDashboardFilter()" class="bg-white hover:bg-slate-50 text-slate-600 font-bold py-1.5 px-2 md:px-3 rounded-lg text-[10px] md:text-xs transition-colors">Limpiar</button><button (click)="applyDashboardFilter()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-3 md:px-4 rounded-lg text-[10px] md:text-xs shadow-sm transition-colors">Filtrar</button></div>
+<!-- ░░ HEADER + FILTROS ░░ -->
+<div class="mb-6 md:mb-8 flex flex-col xl:flex-row xl:items-center justify-between gap-4 md:gap-6">
+  <div class="px-2">
+    <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight font-headline">Rendimiento</h3>
+    <p class="text-sm text-slate-500 mt-1 font-sans">Excluye devoluciones. Basado en costo dinámico de recetas.</p>
+  </div>
+
+  <!-- Filtro de fechas — apilado en móvil, inline en sm+ -->
+  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-0 bg-white border border-slate-200 p-2 rounded-2xl shadow-sm w-full xl:w-auto">
+
+    <!-- Inputs de fecha -->
+    <div class="flex items-center justify-between sm:justify-start gap-3 sm:gap-4 px-3 sm:px-4 py-2">
+      <div class="flex flex-col flex-1 sm:flex-none">
+        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest font-sans">Desde</span>
+        <input type="date" [value]="dashStartDate()" (change)="updateDashStart($event)"
+               class="bg-transparent text-slate-700 text-sm font-bold outline-none cursor-pointer font-sans w-full">
+      </div>
+      <div class="w-px h-8 bg-slate-200"></div>
+      <div class="flex flex-col flex-1 sm:flex-none">
+        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest font-sans">Hasta</span>
+        <input type="date" [value]="dashEndDate()" (change)="updateDashEnd($event)"
+               class="bg-transparent text-slate-700 text-sm font-bold outline-none cursor-pointer font-sans w-full">
+      </div>
+    </div>
+
+    <!-- Botones acción -->
+    <div class="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-slate-100 pt-2 sm:pt-0 sm:pl-3 px-2 sm:px-0">
+      <button (click)="clearDashboardFilter()"
+              class="flex-1 sm:flex-none bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold py-2.5 px-4 rounded-xl text-xs transition-all font-sans">
+        Limpiar
+      </button>
+      <button (click)="applyDashboardFilter()"
+              class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-5 rounded-xl text-xs shadow-sm transition-all font-sans">
+        Filtrar
+      </button>
+    </div>
   </div>
 </div>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5 mb-5">
-  <div class="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 text-center"><div class="w-12 h-12 md:w-[54px] md:h-[54px] rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div><div class="flex flex-col"><h4 class="text-2xl md:text-3xl font-bold text-slate-800 mb-1 leading-none">${{ adminKpis()?.totalRevenue | number }}</h4><span class="text-xs md:text-sm text-slate-500 font-medium">Ingresos Brutos</span></div></div>
-  <div class="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 text-center"><div class="w-12 h-12 md:w-[54px] md:h-[54px] rounded-full bg-orange-50 text-orange-600 flex items-center justify-center shrink-0"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg></div><div class="flex flex-col"><h4 class="text-2xl md:text-3xl font-bold text-slate-800 mb-1 leading-none">-${{ adminKpis()?.totalCOGS | number }}</h4><span class="text-xs md:text-sm text-slate-500 font-medium">Costo Insumos</span></div></div>
-  <div class="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 text-center"><div class="w-12 h-12 md:w-[54px] md:h-[54px] rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg></div><div class="flex flex-col"><h4 class="text-2xl md:text-3xl font-bold text-slate-800 mb-1 leading-none">-${{ adminKpis()?.totalExpenses | number }}</h4><span class="text-xs md:text-sm text-slate-500 font-medium">Caja Menor</span></div></div>
-  <div class="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 text-center relative overflow-hidden"><div class="w-12 h-12 md:w-[54px] md:h-[54px] rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg></div><div class="flex flex-col"><h4 class="text-2xl md:text-3xl font-bold text-slate-800 mb-1 leading-none">${{ adminKpis()?.netProfit | number }}</h4><span class="text-xs md:text-sm text-slate-500 font-medium">Ganancia Neta</span></div><div class="absolute top-4 right-4 text-[10px] md:text-[11px] font-bold px-2 py-0.5 rounded" [class]="(adminKpis()?.netProfit || 0) >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'">{{ adminKpis()?.profitMargin }}%</div></div>
-</div>
+<!-- ░░ KPI CARDS — 1 col móvil, 2 tablet, 4 desktop ░░ -->
+<div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 md:mb-8">
 
-<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5 mb-8">
-  <div class="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 text-center"><div class="w-12 h-12 md:w-[54px] md:h-[54px] rounded-full bg-[#f3f0ff] text-[#6b42f4] flex items-center justify-center shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg></div><div class="flex flex-col"><h4 class="text-2xl md:text-3xl font-bold text-slate-800 mb-1 leading-none">{{ adminKpis()?.totalOrders || 0 }}</h4><span class="text-xs md:text-sm text-slate-500 font-medium">Total Órdenes</span></div></div>
-  <div class="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 text-center"><div class="w-12 h-12 md:w-[54px] md:h-[54px] rounded-full bg-[#fff4e5] text-[#f59e0b] flex items-center justify-center shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></div><div class="flex flex-col"><h4 class="text-2xl md:text-3xl font-bold text-slate-800 mb-1 leading-none">{{ adminKpis()?.pendingOrders || 0 }}</h4><span class="text-xs md:text-sm text-slate-500 font-medium">Órdenes Pendientes</span></div></div>
-  <div class="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 text-center"><div class="w-12 h-12 md:w-[54px] md:h-[54px] rounded-full bg-[#f0f7ff] text-[#3b82f6] flex items-center justify-center shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg></div><div class="flex flex-col"><h4 class="text-2xl md:text-3xl font-bold text-slate-800 mb-1 leading-none">{{ adminKpis()?.holdOrders || 0 }}</h4><span class="text-xs md:text-sm text-slate-500 font-medium">Órdenes Anuladas</span></div></div>
-  <div class="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 text-center"><div class="w-12 h-12 md:w-[54px] md:h-[54px] rounded-full bg-[#ecfdf5] text-[#10b981] flex items-center justify-center shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div><div class="flex flex-col"><h4 class="text-2xl md:text-3xl font-bold text-slate-800 mb-1 leading-none">{{ adminKpis()?.totalCompleted || 0 }}</h4><span class="text-xs md:text-sm text-slate-500 font-medium">Total Completadas</span></div></div>
-</div>
-
-<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-  <div class="p-4 md:p-5 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-white">
-    <div><h5 class="text-base md:text-lg font-bold text-slate-800">Tendencias de Rendimiento</h5></div>
+  <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 md:gap-4 text-center">
+    <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+    </div>
+    <div class="flex flex-col">
+      <h4 class="text-2xl md:text-3xl font-black text-slate-800 font-headline leading-none tracking-tight">${{ adminKpis()?.totalRevenue | number }}</h4>
+      <span class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 font-sans">Ingresos Brutos</span>
+    </div>
   </div>
-  <div class="p-4 md:p-5 h-64 md:h-80 relative w-full">
-    <canvas id="trendChart"></canvas>
+
+  <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 md:gap-4 text-center">
+    <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+    </div>
+    <div class="flex flex-col">
+      <h4 class="text-2xl md:text-3xl font-black text-slate-800 font-headline leading-none tracking-tight">-${{ adminKpis()?.totalCOGS | number }}</h4>
+      <span class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 font-sans">Costo Insumos</span>
+    </div>
+  </div>
+
+  <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 md:gap-4 text-center">
+    <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+    </div>
+    <div class="flex flex-col">
+      <h4 class="text-2xl md:text-3xl font-black text-slate-800 font-headline leading-none tracking-tight">-${{ adminKpis()?.totalExpenses | number }}</h4>
+      <span class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 font-sans">Caja Menor</span>
+    </div>
+  </div>
+
+  <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 md:gap-4 text-center relative overflow-hidden">
+    <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+    </div>
+    <div class="flex flex-col">
+      <h4 class="text-2xl md:text-3xl font-black text-slate-800 font-headline leading-none tracking-tight">${{ adminKpis()?.netProfit | number }}</h4>
+      <span class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 font-sans">Ganancia Neta</span>
+    </div>
+    <div class="absolute top-3 right-3 text-[10px] font-black px-2 py-1 rounded-lg"
+         [class]="(adminKpis()?.netProfit || 0) >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'">
+      {{ adminKpis()?.profitMargin }}%
+    </div>
+  </div>
+
+  <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 md:gap-4 text-center">
+    <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+    </div>
+    <div class="flex flex-col">
+      <h4 class="text-2xl md:text-3xl font-black text-slate-800 font-headline leading-none tracking-tight">{{ adminKpis()?.totalOrders || 0 }}</h4>
+      <span class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 font-sans">Total Órdenes</span>
+    </div>
+  </div>
+
+  <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 md:gap-4 text-center">
+    <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+    </div>
+    <div class="flex flex-col">
+      <h4 class="text-2xl md:text-3xl font-black text-slate-800 font-headline leading-none tracking-tight">{{ adminKpis()?.pendingOrders || 0 }}</h4>
+      <span class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 font-sans">Pendientes</span>
+    </div>
+  </div>
+
+  <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 md:gap-4 text-center">
+    <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+    </div>
+    <div class="flex flex-col">
+      <h4 class="text-2xl md:text-3xl font-black text-slate-800 font-headline leading-none tracking-tight">{{ adminKpis()?.holdOrders || 0 }}</h4>
+      <span class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 font-sans">Anuladas</span>
+    </div>
+  </div>
+
+  <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 md:gap-4 text-center">
+    <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+    </div>
+    <div class="flex flex-col">
+      <h4 class="text-2xl md:text-3xl font-black text-slate-800 font-headline leading-none tracking-tight">${{ adminKpis()?.totalCompleted || 0 }}</h4>
+      <span class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 font-sans">Completadas</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ░░ GRÁFICA ░░ -->
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+  <div class="p-4 md:p-6 border-b border-slate-100 bg-white">
+    <h5 class="text-base md:text-lg font-bold text-slate-800 font-headline">Tendencias de Rendimiento</h5>
+  </div>
+  <!-- overflow-x-auto permite scroll horizontal en pantallas muy pequeñas -->
+  <div class="p-3 md:p-6 h-64 md:h-80 lg:h-96 relative w-full overflow-x-auto">
+    <div class="min-w-[320px] h-full">
+      <canvas id="trendChart"></canvas>
+    </div>
   </div>
 </div>

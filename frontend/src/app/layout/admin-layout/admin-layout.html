@@ -1,70 +1,139 @@
-<div class="min-h-screen bg-slate-50 flex">
-  <aside class="w-64 bg-white border-r border-slate-200 flex flex-col fixed h-full">
-    <div class="p-6 border-b border-slate-100 flex items-center gap-3">
-      <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-        <i class="fas fa-rocket text-white"></i>
-      </div>
-      <h1 class="text-xl font-bold tracking-tight text-slate-900">
-        {{ authService.tenantConfig()?.businessInfo?.name || 'Servex' }}
+<div class="flex h-screen bg-slate-50 font-sans">
+
+  <!-- ░░ OVERLAY MÓVIL — se cierra al tocar fuera ░░ -->
+  @if (isSidebarOpen()) {
+    <div
+      (click)="closeSidebar()"
+      class="fixed inset-0 bg-black/50 z-30 lg:hidden">
+    </div>
+  }
+
+  <!-- ░░ SIDEBAR ░░ -->
+  <aside
+    [class]="isSidebarOpen() ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+    class="fixed lg:static inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col z-40 transition-transform duration-300 ease-in-out">
+
+    <!-- Logo / Nombre negocio -->
+    <div class="h-20 flex items-center justify-between px-6 border-b border-slate-100">
+      <h1 class="text-lg font-extrabold text-slate-800 tracking-tight uppercase leading-tight">
+        {{ authService.tenantConfig()?.businessInfo?.name || 'Servex SaaS' }}
       </h1>
+      <!-- Botón cerrar sidebar solo en móvil -->
+      <button
+        (click)="closeSidebar()"
+        class="lg:hidden text-slate-400 hover:text-slate-700 transition-colors">
+        <span class="material-symbols-outlined text-2xl">close</span>
+      </button>
     </div>
 
-    <nav class="flex-1 p-4 space-y-1">
-      <a routerLink="/admin/dashboard" routerLinkActive="bg-indigo-50 text-indigo-600" 
-         class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all group">
-        <i class="fas fa-chart-pie w-5"></i>
-        <span class="font-medium">Dashboard</span>
+    <!-- Nav links -->
+    <nav class="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
+
+      <a routerLink="/admin/dashboard"
+         routerLinkActive="bg-indigo-50 text-indigo-600 border-indigo-600"
+         [routerLinkActiveOptions]="{exact: true}"
+         (click)="closeSidebar()"
+         class="flex items-center px-4 py-3 rounded-lg border-l-4 border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
+        <span class="material-symbols-outlined mr-3 text-[22px]">dashboard</span>
+        <span class="font-medium text-sm">Dashboard</span>
       </a>
 
-      <a routerLink="/admin/menu" routerLinkActive="bg-indigo-50 text-indigo-600"
-         class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all group">
-        <i class="fas fa-utensils w-5"></i>
-        <span class="font-medium">Menú Digital</span>
+      <a routerLink="/admin/menu"
+         routerLinkActive="bg-indigo-50 text-indigo-600 border-indigo-600"
+         (click)="closeSidebar()"
+         class="flex items-center px-4 py-3 rounded-lg border-l-4 border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
+        <span class="material-symbols-outlined mr-3 text-[22px]">menu_book</span>
+        <span class="font-medium text-sm">Menú Digital</span>
       </a>
 
-      @if (featureService.hasFeature('inventoryAdvanced')) {
-        <a routerLink="/admin/inventory" routerLinkActive="bg-indigo-50 text-indigo-600"
-           class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all group">
-          <i class="fas fa-boxes w-5"></i>
-          <span class="font-medium">Inventario</span>
-        </a>
-      }
+      <a routerLink="/admin/inventory"
+         routerLinkActive="bg-indigo-50 text-indigo-600 border-indigo-600"
+         (click)="closeSidebar()"
+         class="flex items-center px-4 py-3 rounded-lg border-l-4 border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
+        <span class="material-symbols-outlined mr-3 text-[22px]">inventory_2</span>
+        <span class="font-medium text-sm">Inventario</span>
+      </a>
 
-      @if (featureService.hasFeature('employeeManagement')) {
-        <a routerLink="/admin/cashiers" routerLinkActive="bg-indigo-50 text-indigo-600"
-           class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all group">
-          <i class="fas fa-users w-5"></i>
-          <span class="font-medium">Personal</span>
-        </a>
-      }
+      <a routerLink="/admin/reports"
+         routerLinkActive="bg-indigo-50 text-indigo-600 border-indigo-600"
+         (click)="closeSidebar()"
+         class="flex items-center px-4 py-3 rounded-xl border-l-4 border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-300 group">
+        <span class="material-symbols-outlined mr-3 text-xl group-hover:scale-110 transition-transform">analytics</span>
+        <span class="font-medium text-sm">Ventas</span>
+      </a>
 
-      @if (featureService.hasFeature('electronicInvoicing')) {
-        <a routerLink="/admin/reports" routerLinkActive="bg-indigo-50 text-indigo-600"
-           class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all group">
-          <i class="fas fa-file-invoice-dollar w-5"></i>
-          <span class="font-medium">Ventas exitosas</span>
-        </a>
-      }
+      <a routerLink="/admin/canceled"
+         routerLinkActive="bg-indigo-50 text-indigo-600 border-indigo-600"
+         (click)="closeSidebar()"
+         class="flex items-center px-4 py-3 rounded-lg border-l-4 border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
+        <span class="material-symbols-outlined mr-3 text-[22px]">cancel</span>
+        <span class="font-medium text-sm">Ordenes canceladas</span>
+      </a>
 
-      @if (featureService.hasFeature('inventoryAdvanced')) {
-        <a routerLink="/admin/canceled" routerLinkActive="bg-indigo-50 text-indigo-600"
-          class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 transition-all group">
-          <i class="fas fa-ban w-5"></i>
-          <span class="font-medium">Ventas canceladas</span>
-        </a>
-    }
+      <a routerLink="/admin/cashiers"
+         routerLinkActive="bg-indigo-50 text-indigo-600 border-indigo-600"
+         (click)="closeSidebar()"
+         class="flex items-center px-4 py-3 rounded-lg border-l-4 border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
+        <span class="material-symbols-outlined mr-3 text-[22px]">groups</span>
+        <span class="font-medium text-sm">Personal</span>
+      </a>
+
+      <a routerLink="/admin/finance"
+         routerLinkActive="bg-indigo-50 text-indigo-600 border-indigo-600"
+         (click)="closeSidebar()"
+         class="flex items-center px-4 py-3 rounded-lg border-l-4 border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
+        <span class="material-symbols-outlined mr-3 text-[22px]">payments</span>
+        <span class="font-medium text-sm">Caja menor</span>
+      </a>
+
     </nav>
 
-    <div class="p-4 border-t border-slate-100">
-      <button (click)="authService.logout()" 
-              class="flex items-center gap-3 px-4 py-3 rounded-xl text-rose-600 hover:bg-rose-50 transition-all w-full group">
-        <i class="fas fa-sign-out-alt w-5"></i>
-        <span class="font-medium">Cerrar Sesión</span>
-      </button>
+    <!-- Cerrar sesión -->
+    <div class="p-6 border-t border-slate-100">
+      <a (click)="authService.logout()"
+         class="flex items-center px-4 py-3 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all duration-300 cursor-pointer">
+        <span class="material-symbols-outlined mr-3 text-xl">logout</span>
+        <span class="font-medium text-sm">Cerrar Sesión</span>
+      </a>
     </div>
   </aside>
 
-  <main class="ml-64 flex-1 p-8">
-    <router-outlet></router-outlet>
-  </main>
+  <!-- ░░ CONTENIDO PRINCIPAL ░░ -->
+  <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+
+    <!-- Header -->
+    <header class="h-16 lg:h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 md:px-8 z-10 shrink-0">
+
+      <!-- Hamburger — solo en móvil/tablet -->
+      <div class="flex items-center gap-3">
+        <button
+          (click)="toggleSidebar()"
+          class="lg:hidden text-slate-600 hover:text-slate-900 transition-colors p-1">
+          <span class="material-symbols-outlined text-2xl">menu</span>
+        </button>
+        <h2 class="text-base md:text-xl font-semibold text-slate-800 tracking-tight">Administración</h2>
+      </div>
+
+      <!-- Acciones del header -->
+      <div class="flex items-center gap-3 md:gap-6">
+        <button class="text-slate-400 hover:text-slate-600 transition-colors">
+          <span class="material-symbols-outlined">notifications</span>
+        </button>
+
+        <div class="flex items-center gap-2 md:gap-3 pl-3 md:pl-6 border-l border-slate-200">
+          <div class="hidden sm:flex flex-col items-end">
+            <span class="text-sm font-bold text-slate-700">{{ authService.currentUser()?.name }}</span>
+            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Admin</span>
+          </div>
+          <span class="material-symbols-outlined text-slate-300 text-4xl">account_circle</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Contenido de la ruta -->
+    <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-4 md:p-6 lg:p-8 xl:p-10">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
 </div>

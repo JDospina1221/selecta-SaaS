@@ -3,14 +3,54 @@
 @tailwind utilities;
 
 :root {
-  --primary-color: #6366f1; // Morado por defecto
+  /* Estas variables las sigue controlando tu ThemeService */
+  --primary-color: #6366f1; 
   --secondary-color: #4f46e5;
   --primary-hover: #4338ca;
 }
 
-/* Sobreescribimos las clases de utilidad para que sigan las variables */
-.bg-indigo-600 { background-color: var(--primary-color) !important; }
-.hover\:bg-indigo-700:hover { background-color: var(--primary-hover) !important; }
-.text-indigo-600 { color: var(--primary-color) !important; }
-.border-indigo-600 { border-color: var(--primary-color) !important; }
-.bg-indigo-50 { background-color: color-mix(in srgb, var(--primary-color), white 90%) !important; }
+/* 1. FIX DE ICONOS (Para que no se vea el texto feo) */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+
+/* 2. JERARQUÍA EDITORIAL */
+.text-h1 {
+  @apply text-2xl font-semibold tracking-tight leading-tight font-headline text-on-surface;
+}
+
+.text-h2 {
+  @apply text-xl font-medium font-headline text-slate-800;
+}
+
+.text-p {
+  @apply text-sm leading-relaxed text-slate-500 font-sans;
+}
+
+.text-label {
+  @apply text-[10px] font-bold uppercase tracking-widest text-slate-400 font-sans;
+}
+
+/* 3. TEMA DINÁMICO PARA SIDEBAR (Magia Multi-tenant) */
+.sidebar-theme {
+  background-color: var(--primary-color); 
+  /* Le damos un degradado oscuro encima para que siempre contraste */
+  background-image: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.3) 100%);
+  color: white;
+}
+
+.nav-item-active {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border-right: 4px solid white; 
+  @apply text-white font-semibold;
+}
+
+.nav-item-idle {
+  @apply text-white/60 hover:text-white hover:bg-white/5 transition-all duration-300;
+}
