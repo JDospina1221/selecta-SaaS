@@ -104,7 +104,6 @@
     <!-- Header -->
     <header class="h-16 lg:h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 md:px-8 z-10 shrink-0">
 
-      <!-- Hamburger — solo en móvil/tablet -->
       <div class="flex items-center gap-3">
         <button
           (click)="toggleSidebar()"
@@ -114,18 +113,48 @@
         <h2 class="text-base md:text-xl font-semibold text-slate-800 tracking-tight">Administración</h2>
       </div>
 
-      <!-- Acciones del header -->
       <div class="flex items-center gap-3 md:gap-6">
         <button class="text-slate-400 hover:text-slate-600 transition-colors">
           <span class="material-symbols-outlined">notifications</span>
         </button>
 
-        <div class="flex items-center gap-2 md:gap-3 pl-3 md:pl-6 border-l border-slate-200">
-          <div class="hidden sm:flex flex-col items-end">
-            <span class="text-sm font-bold text-slate-700">{{ authService.currentUser()?.name }}</span>
-            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Admin</span>
-          </div>
-          <span class="material-symbols-outlined text-slate-300 text-4xl">account_circle</span>
+        <div class="relative pl-3 md:pl-6 border-l border-slate-200">
+          <button 
+            (click)="toggleProfileMenu()"
+            class="flex items-center gap-2 md:gap-3 hover:bg-slate-50 p-1 rounded-xl transition-all duration-200">
+            <div class="hidden sm:flex flex-col items-end">
+              <span class="text-sm font-bold text-slate-700">{{ authService.currentUser()?.name }}</span>
+              <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Admin</span>
+            </div>
+
+            <div class="relative">
+              <span class="material-symbols-outlined text-slate-300 text-4xl">account_circle</span>
+              <span class="absolute bottom-0 right-0 flex h-3 w-3">
+                @if (isOnline()) {
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                }
+                <span [class]="isOnline() ? 'bg-emerald-500' : 'bg-slate-400'"
+                      class="relative inline-flex rounded-full h-3 w-3 border-2 border-white transition-colors duration-500">
+                </span>
+              </span>
+            </div>
+          </button>
+
+          @if (isProfileMenuOpen()) {
+            <div class="fixed inset-0 z-10" (click)="closeProfileMenu()"></div>
+
+            <div class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-20 animate-in fade-in zoom-in duration-200 origin-top-right">
+              <div class="px-4 py-2 border-b border-slate-50 mb-1 sm:hidden">
+                <span class="text-xs font-bold text-slate-700 block">{{ authService.currentUser()?.name }}</span>
+              </div>
+              
+              <button (click)="authService.logout(); closeProfileMenu()"
+                class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-semibold">
+                <span class="material-symbols-outlined mr-3 text-xl">logout</span>
+                Cerrar Sesión
+              </button>
+            </div>
+          }
         </div>
       </div>
     </header>

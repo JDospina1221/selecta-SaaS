@@ -23,3 +23,4 @@ export class ThemeService {
     return (usePound ? "#" : "") + (clamp(g) | (clamp(b) << 8) | (clamp(r) << 16)).toString(16).padStart(6, '0');
   }
 }
+
